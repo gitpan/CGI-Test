@@ -1,3 +1,12 @@
+Sat Apr 14 10:52:17 MEST 2001   Raphael Manfredi <Raphael_Manfredi@pobox.com>
+
+. Description:
+
+	Version 0.1.1.
+
+	Set PERL5LIB in child to mirror parent's @INC, so that the CGI
+	program, if written in Perl, can get the same include path.
+
 Sat Mar 31 12:39:37 MEST 2001  Raphael Manfredi <Raphael_Manfredi@pobox.com>
 
 	Version 0.1.0.

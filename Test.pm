@@ -1,5 +1,5 @@
 #
-# $Id: Test.pm,v 0.1 2001/03/31 10:54:01 ram Exp $
+# $Id: Test.pm,v 0.1.1.1 2001/04/14 08:50:13 ram Exp $
 #
 #  Copyright (c) 2001, Raphael Manfredi
 #  
@@ -8,6 +8,9 @@
 #
 # HISTORY
 # $Log: Test.pm,v $
+# Revision 0.1.1.1  2001/04/14 08:50:13  ram
+# patch1: set PERL5LIB in child to mirror parent's @INC
+#
 # Revision 0.1  2001/03/31 10:54:01  ram
 # Baseline for first Alpha release.
 #
@@ -28,9 +31,9 @@ use File::Spec;
 use File::Basename;
 
 require Exporter;
-
 use vars qw($VERSION @ISA @EXPORT);
-$VERSION = '0.1';
+
+$VERSION = '0.101';
 @ISA = qw(Exporter);
 @EXPORT = qw(ok);
 
@@ -463,8 +466,22 @@ sub _run_cgi {
 	}
 
 	#
+	# Make sure the script sees the same @INC as we do currently.
+	# This is very important when running a regression test suite, to
+	# make sure any CGI script using the module we're testing will see
+	# the files from the build directory.
+	#
+	# Since we're about to chdir() to the cgi-bin directory, we must anchor
+	# any relative path to the current working directory.
+	#
+
+	use Cwd qw(abs_path);
+
+	$ENV{PERL5LIB} = join(':', map { -e $_ ? abs_path($_) : $_ } @INC);
+
+	#
 	# Now run the script, changing the current directory to the location
-	# of the script.
+	# of the script, as a web server would.
 	#
 
 	my $directory = dirname($script);
