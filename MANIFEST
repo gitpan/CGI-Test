@@ -1,0 +1,45 @@
+README                                 The main README file
+MANIFEST                               This shipping list
+ChangeLog                              List of changes
+Makefile.PL                            Builds Makefile
+Test.pm                                Main CGI test harness interface
+Test/Form.pm                           Access API to content of <FORM>
+Test/Form/Group.pm                     Records groupped widgets
+Test/Form/Widget.pm                    Ancestor to all <FORM> widgets
+Test/Form/Widget/Box.pm                Ancestor to all box widgets
+Test/Form/Widget/Box/Check.pm          A checkbox widget
+Test/Form/Widget/Box/Radio.pm          A radio buttton widget
+Test/Form/Widget/Button.pm             Ancestor to all button widgets
+Test/Form/Widget/Button/Image.pm       An image submit button
+Test/Form/Widget/Button/Plain.pm       A plain button, hooked to a script
+Test/Form/Widget/Button/Reset.pm       A reset button
+Test/Form/Widget/Button/Submit.pm      A submit button
+Test/Form/Widget/Hidden.pm             An hidden field
+Test/Form/Widget/Input.pm              Ancestor to all text input widgets
+Test/Form/Widget/Input/File.pm         A file upload widget
+Test/Form/Widget/Input/Password.pm     A password input field
+Test/Form/Widget/Input/Text_Area.pm    A text area widget
+Test/Form/Widget/Input/Text_Field.pm   A text field widget
+Test/Form/Widget/Menu.pm               Ancestor to all menu widgets
+Test/Form/Widget/Menu/List.pm          A scrolling list widget
+Test/Form/Widget/Menu/Popup.pm         A popup menu widget
+Test/Input.pm                          CGI input data for a POST request
+Test/Input/Multipart.pm                Input in multipart encoding
+Test/Input/URL.pm                      Input in x-www-form-urlencoded form
+Test/Page.pm                           Ancestor to all HTTP returned pages
+Test/Page/Error.pm                     An error page
+Test/Page/HTML.pm                      An HTML page
+Test/Page/Other.pm                     Any other page type
+Test/Page/Real.pm                      Ancestor to all real pages
+Test/Page/Text.pm                      A text page
+t/browse.pl                            Common routines for play_* tests
+t/cgi/dumpargs                         Dump CGI args in text/plain form
+t/cgi/getform                          Versatile CGI form generator
+t/cgi/printenv                         Dump the CGI running environment
+t/env.t                                Test the CGI environment setup
+t/get.t                                Test interaction with GET requests
+t/parsing.t                            Test parsing and query of <FORM> widgets
+t/play_get.t                           Test interaction via GET
+t/play_multi.t                         Test interaction via POST multipart
+t/play_post.t                          Test interaction via POST
+t/post.t                               Test interaction with POST requests
