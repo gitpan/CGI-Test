@@ -1,5 +1,5 @@
 #
-# $Id: parsing.t,v 0.1 2001/03/31 10:54:03 ram Exp $
+# $Id: parsing.t,v 0.1.1.1 2001/04/17 10:42:25 ram Exp $
 #
 #  Copyright (c) 2001, Raphael Manfredi
 #  
@@ -8,6 +8,9 @@
 #
 # HISTORY
 # $Log: parsing.t,v $
+# Revision 0.1.1.1  2001/04/17 10:42:25  ram
+# patch2: fixed test 4 to match even if there are parameters in type
+#
 # Revision 0.1  2001/03/31 10:54:03  ram
 # Baseline for first Alpha release.
 #
@@ -30,7 +33,7 @@ ok 1, defined $ct;
 my $page = $ct->GET("$BASE/getform");
 ok 2, $page->is_ok;
 ok 3, length $page->raw_content;
-ok 4, $page->content_type eq "text/html";
+ok 4, $page->content_type =~ m|^text/html\b|;
 
 my $forms = $page->forms;
 ok 5, @$forms == 1;

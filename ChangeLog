@@ -1,3 +1,28 @@
+Tue Apr 17 13:27:06 MEST 2001   Raphael Manfredi <Raphael_Manfredi@pobox.com>
+
+. Description:
+
+	Version 0.1.3.
+
+	Changed test 22 in t/browse.pl to perform explicit sorting
+	of the month parameter string, so that the string comparison
+	is reliable.
+
+Tue Apr 17 12:44:16 MEST 2001   Raphael Manfredi <Raphael_Manfredi@pobox.com>
+
+. Description:
+
+	Version 0.1.2.
+
+	Discard parameters when figuring out content-type, so that
+	we build proper Page objects.
+
+	Added note about possible parameters in content_type in
+	the man page for CGI::Test::Page.
+
+	Fixed t/parsing regression test so that it works even when there
+	are parameters in the returned content-type field.
+
 Sat Apr 14 10:52:17 MEST 2001   Raphael Manfredi <Raphael_Manfredi@pobox.com>
 
 . Description:

@@ -1,5 +1,5 @@
 #
-# $Id: browse.pl,v 0.1 2001/03/31 10:54:03 ram Exp $
+# $Id: browse.pl,v 0.1.1.1 2001/04/17 11:25:18 ram Exp $
 #
 #  Copyright (c) 2001, Raphael Manfredi
 #  
@@ -8,6 +8,9 @@
 #
 # HISTORY
 # $Log: browse.pl,v $
+# Revision 0.1.1.1  2001/04/17 11:25:18  ram
+# patch3: changed test 22 to perform explicit sorting
+#
 # Revision 0.1  2001/03/31 10:54:03  ram
 # Baseline for first Alpha release.
 #
@@ -92,7 +95,7 @@ sub browse {
 	ok 19, !exists $args2->{new};			# unchecked, not submitted
 	ok 20, $args2->{color} eq "red";
 	ok 21, $args2->{note} eq "this is some text";
-	ok 22, $args2->{months} eq "Jan Feb";
+	ok 22, join(" ", sort split(' ', $args2->{months})) eq "Feb Jan";
 	ok 23, $args2->{passwd} eq "foobar";
 	ok 24, $args2->{Send} eq "Send";
 	ok 25, $args2->{portrait} eq "this is it, disappointed?";

@@ -1,5 +1,5 @@
 #
-# $Id: Test.pm,v 0.1.1.1 2001/04/14 08:50:13 ram Exp $
+# $Id: Test.pm,v 0.1.1.3 2001/04/17 11:24:50 ram Exp $
 #
 #  Copyright (c) 2001, Raphael Manfredi
 #  
@@ -8,6 +8,12 @@
 #
 # HISTORY
 # $Log: Test.pm,v $
+# Revision 0.1.1.3  2001/04/17 11:24:50  ram
+# patch3: updated version number
+#
+# Revision 0.1.1.2  2001/04/17 10:41:33  ram
+# patch2: discard parameters when figuring out content-type
+#
 # Revision 0.1.1.1  2001/04/14 08:50:13  ram
 # patch1: set PERL5LIB in child to mirror parent's @INC
 #
@@ -33,7 +39,7 @@ use File::Basename;
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT);
 
-$VERSION = '0.101';
+$VERSION = '0.103';
 @ISA = qw(Exporter);
 @EXPORT = qw(ok);
 
@@ -351,7 +357,9 @@ sub _cgi_request {
 	#
 
 	my $type = $header->{'Content-Type'};
-	my $objtype = $self->_obj_type->{lc($type)} || "Other";
+	my $base_type = lc($type);
+	$base_type =~ s/;.*//;			# Strip type parameters
+	my $objtype = $self->_obj_type->{$base_type} || "Other";
 	$objtype = "CGI::Test::Page::$objtype";
 
 	eval "require $objtype";
@@ -360,7 +368,7 @@ sub _cgi_request {
 	my $page = $objtype->make(
 		-server			=> $self,
 		-file			=> $fname,
-		-content_type	=> $type,
+		-content_type	=> $type,		# raw type, with parameters
 		-user			=> $user,
 		-uri			=> $u,
 	);
@@ -564,7 +572,7 @@ CGI::Test - CGI regression test framework
  );
 
  my $page = $ct->GET("http://some.server:1234/cgi-bin/script?arg=1");
- ok 1, $page->content_type eq "text/html";
+ ok 1, $page->content_type =~ m|text/html\b|;
 
  my $form = $page->forms->[0];
  ok 2, $form->action eq "/cgi-bin/some_target";

@@ -1,5 +1,5 @@
 #
-# $Id: Page.pm,v 0.1 2001/03/31 10:54:03 ram Exp $
+# $Id: Page.pm,v 0.1.1.1 2001/04/17 10:41:55 ram Exp $
 #
 #  Copyright (c) 2001, Raphael Manfredi
 #  
@@ -8,6 +8,9 @@
 #
 # HISTORY
 # $Log: Page.pm,v $
+# Revision 0.1.1.1  2001/04/17 10:41:55  ram
+# patch2: added note about possible parameters in content_type
+#
 # Revision 0.1  2001/03/31 10:54:03  ram
 # Baseline for first Alpha release.
 #
@@ -129,7 +132,17 @@ available to the whole hierarchy:
 
 =item C<content_type>
 
-The MIME content type.
+The MIME content type, along with parameters, as it appeared in the headers.
+For instance, it can be:
+
+	text/html; charset=ISO-8859-1
+
+Don't assume it to be just C<text/html> though.  Use something like:
+
+	ok 1, $page->content_type =~ m|^text/html\b|;
+
+in your regression tests, which will match whether there are parameters
+following the content type or not.
 
 =item C<delete>
 
