@@ -1,22 +1,13 @@
-#
-# $Id: Group.pm,v 0.1 2001/03/31 10:54:01 ram Exp $
-#
+package CGI::Test::Form::Group;
+use strict;
+################################################################
+# $Id: Group.pm,v 1.2 2003/09/29 11:00:38 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+################################################################
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
-#
-# HISTORY
-# $Log: Group.pm,v $
-# Revision 0.1  2001/03/31 10:54:01  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Group;
 
 #
 # This class records names of grouped objects (radio buttons, checkboxes),
@@ -27,7 +18,7 @@ use Carp::Datum;
 use Log::Agent;
 
 #
-# ->make
+# ->new
 #
 # Creation routine
 #
@@ -35,49 +26,56 @@ use Log::Agent;
 # and listing all the buttons belonging to the named group.  Each box is
 # also made aware of this object.
 #
-sub make {
-	DFEATURE my $f_;
-	my $self = bless {}, shift;		# The object is the hash table we use
-	my ($rlist) = @_;
+sub new
+{
+    DFEATURE my $f_;
+    my $this = bless {}, shift;    # The object is the hash table we use
+    my ($rlist) = @_;
 
-	DREQUIRE ref $rlist eq 'ARRAY';
-	DREQUIRE @$rlist > 0;
+    DREQUIRE ref $rlist eq 'ARRAY';
+    DREQUIRE @$rlist > 0;
 
-	#
-	# Create map: "group name" => [list of buttons in group]
-	#
+    #
+    # Create map: "group name" => [list of buttons in group]
+    #
 
-	foreach my $b (@$rlist) {
-		DASSERT ref $b && $b->isa("CGI::Test::Form::Widget::Box");
-		my $gname = $b->name;
-		$self->{$gname} = [] unless exists $self->{$gname};
-		push @{$self->{$gname}}, $b;
-		$b->set_group($self);
-	}
+    foreach my $b (@$rlist)
+    {
+        DASSERT ref $b && $b->isa("CGI::Test::Form::Widget::Box");
+        my $gname = $b->name;
+        $this->{$gname} = [] unless exists $this->{$gname};
+        push @{$this->{$gname}}, $b;
+        $b->set_group($this);
+    }
 
-	$self->_validate_radios if $rlist->[0]->is_radio;
+    $this->_validate_radios() if $rlist->[ 0 ]->is_radio();
 
-	return DVAL $self;
+    return DVAL $this;
 }
 
 #
 # Attribute access
 #
 
-sub names	{ keys %{$_[0]} }
+sub names
+{
+    my $this = shift;
+    return keys %{$this};
+}
 
 #
 # ->widgets_in
 #
 # Returns list of widgets held within named group, empty if none.
 #
-sub widgets_in {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($gname) = @_;
+sub widgets_in
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($gname) = @_;
 
-	my $list = $self->{$gname} || [];
-	return DARY @$list;
+    my $list = $this->{$gname} || [];
+    return DARY @$list;
 }
 
 #
@@ -85,13 +83,14 @@ sub widgets_in {
 #
 # Returns amount of widgets held within named group, 0 if none.
 #
-sub widget_count {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($gname) = @_;
+sub widget_count
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($gname) = @_;
 
-	my $list = $self->{$gname};
-	return DVAL ref $list ? scalar(@$list) : 0;
+    my $list = $this->{$gname};
+    return DVAL ref $list ? scalar(@$list) : 0;
 }
 
 #
@@ -99,12 +98,13 @@ sub widget_count {
 #
 # Check whether name is that of a known widget group.
 #
-sub is_groupname {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($gname) = @_;
+sub is_groupname
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($gname) = @_;
 
-	return DVAL exists $self->{$gname};
+    return DVAL exists $this->{$gname};
 }
 
 #
@@ -114,42 +114,48 @@ sub is_groupname {
 # button selected, otherwise mark the first as selected.  Also ensure
 # exactly one radio is selected, or unselect all extra.
 #
-sub _validate_radios {
-	DFEATURE my $f_;
-	my $self = shift;
+sub _validate_radios
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	foreach my $gname ($self->names) {
-		my @checked = grep { $_->is_checked } $self->widgets_in($gname);
-		my $checked = @checked;
+    foreach my $gname ($this->names)
+    {
+        my @checked = grep {$_->is_checked} $this->widgets_in($gname);
+        my $checked = @checked;
 
-		if ($checked > 1) {
-			my $first = shift @checked;
+        if ($checked > 1)
+        {
+            my $first = shift @checked;
 
-			#
-			# NB: we're not calling uncheck() nor set_is_checked() to fix
-			# incorrectly configured radio buttons, since it is normally an
-			# invalid operation.  We're resettting the attribute directly.
-			#
+            #
+            # NB: we're not calling uncheck() nor set_is_checked() to fix
+            # incorrectly configured radio buttons, since it is normally an
+            # invalid operation.  We're resettting the attribute directly.
+            #
 
-			logwarn "found %d checked %ss for '%s', keeping first (tag \"%s\")",
-				$checked, $first->gui_type, $gname, ($first->value || "");
+            logwarn
+              "found %d checked %ss for '%s', keeping first (tag \"%s\")",
+              $checked, $first->gui_type, $gname, ($first->value || "");
 
-			foreach my $b (@checked) {
-				$b->{is_checked} = 0;		# Direct access
-			}
-		}
-		elsif ($checked == 0) {
-			my $first = $self->{$gname}->[0];
-			logwarn "no checked %ss for '%s', checking first (tag \"%s\")",
-				$first->gui_type, $gname, ($first->value || "");
-			$first->{is_checked} = 1;		# Direct access
-		}
+            foreach my $b (@checked)
+            {
+                $b->{is_checked} = 0;    # Direct access
+            }
+        }
+        elsif ($checked == 0)
+        {
+            my $first = $this->{$gname}->[ 0 ];
+            logwarn "no checked %ss for '%s', checking first (tag \"%s\")",
+              $first->gui_type, $gname, ($first->value || "");
+            $first->{is_checked} = 1;    # Direct access
+        }
 
-		DASSERT 1 == grep($_->is_checked, $self->widgets_in($gname)),
-			"exactly one radio button checked for group '$gname'";
-	}
+        DASSERT 1 == grep($_->is_checked, $this->widgets_in($gname)),
+          "exactly one radio button checked for group '$gname'";
+    }
 
-	return DVOID;
+    return DVOID;
 }
 
 1;
@@ -208,9 +214,24 @@ name is not a valid group name, the list will be empty.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

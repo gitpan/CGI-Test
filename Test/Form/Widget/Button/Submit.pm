@@ -1,30 +1,22 @@
-#
-# $Id: Submit.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Form::Widget::Button::Submit;
+use strict;
+##################################################################
+# $Id: Submit.pm,v 1.2 2003/09/29 11:00:39 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Submit.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Button::Submit;
 
 #
 # This class models a FORM submit button.
 #
 
-require CGI::Test::Form::Widget::Button;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget::Button);
+use CGI::Test::Form::Widget::Button;
+use base qw(CGI::Test::Form::Widget::Button);
 
 use Carp::Datum;
 use Log::Agent;
@@ -33,7 +25,10 @@ use Log::Agent;
 # Attribute access
 #
 
-sub gui_type	{ "submit button" }
+sub gui_type
+{
+    return "submit button";
+}
 
 #
 # ->press
@@ -43,18 +38,22 @@ sub gui_type	{ "submit button" }
 #
 # Returns resulting CGI::Test::Page.
 #
-sub press {
-	DFEATURE my $f_;
-	my $self = shift;
-	$self->set_is_pressed(1);
-	return DVAL $self->form->submit;
+sub press
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    $this->set_is_pressed(1);
+    return DVAL $this->form->submit;
 }
 
 #
 # Button predicates
 #
 
-sub is_submit	{ 1 }
+sub is_submit
+{
+    return 1;
+}
 
 1;
 
@@ -78,9 +77,24 @@ Pressing it immediately triggers an HTTP request, as defined by the form.
 The interface is the same as the one described in
 L<CGI::Test::Form::Widget::Button>.
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

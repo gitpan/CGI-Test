@@ -1,22 +1,15 @@
-#
-# $Id: Widget.pm,v 0.1 2001/03/31 10:54:01 ram Exp $
+package CGI::Test::Form::Widget;
+use strict;
+################################################################
+# $Id: Widget.pm,v 1.2 2003/09/29 11:00:38 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Widget.pm,v $
-# Revision 0.1  2001/03/31 10:54:01  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget;
 
 #
 # This class models a CGI form widget (button, text field, etc...).
@@ -27,70 +20,80 @@ package CGI::Test::Form::Widget;
 use Carp::Datum;
 use Log::Agent;
 
+############################################################
 #
-# ->make
+# ->new
 #
 # Creation routine -- common to ALL widgets but <BUTTON> elements.
 #
-sub make {
-	DFEATURE my $f_;
-	my $self = bless {}, shift;
-	my ($node, $form) = @_;
+############################################################
+sub new
+{
+    DFEATURE my $f_;
+    my $this = bless {}, shift;
+    my ($node, $form) = @_;
 
-	#
-	# Can't create a CGI::Test::Form::Widget object, only heirs.
-	#
+    #
+    # Can't create a CGI::Test::Form::Widget object, only heirs.
+    #
 
-	logconfess "%s is a deferred class", __PACKAGE__
-		if ref $self eq __PACKAGE__;
+    logconfess "%s is a deferred class", __PACKAGE__
+      if ref $this eq __PACKAGE__;
 
-	DREQUIRE $node->isa("HTML::Element");
-	DREQUIRE $form->isa("CGI::Test::Form");
-	DREQUIRE $node->tag eq "input"		||
-			 $node->tag eq "select"		||
-			 $node->tag eq "textarea";
+    DREQUIRE $node->isa("HTML::Element");
+    DREQUIRE $form->isa("CGI::Test::Form");
+    DREQUIRE $node->tag eq "input"
+      || $node->tag()   eq "select"
+      || $node->tag()   eq "textarea";
 
-	$self->_common_init($form);
+    $this->_common_init($form);
 
-	#
-	# We don't keep any reference on the node.
-	# Analyze the HTML tree to determine some parameters.
-	#
+    #
+    # We don't keep any reference on the node.
+    # Analyze the HTML tree to determine some parameters.
+    #
 
-	$self->_init($node);		# Defined in each heir
+    $this->_init($node);    # Defined in each heir
 
-	return DVAL $self;
+    return DVAL $this;
 }
 
+############################################################
 #
 # ->_common_init
 #
 # Common attribute initialization for all widgets
 #
-sub _common_init {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($form) = @_;
+############################################################
+sub _common_init
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($form) = @_;
 
-	$self->{form} = $form;		# <FORM> containing this widget
-	$self->{name} = "";			# Always possible to query, must be defined
-	$self->{value} = "";		# Idem
+    $this->{form}  = $form;    # <FORM> containing this widget
+    $this->{name}  = "";       # Always possible to query, must be defined
+    $this->{value} = "";       # Idem
 
-	return DVOID;
+    return DVOID;
 }
 
+############################################################
 #
 # ->_init
 #
 # Per-widget initialization routine.
 # Parse HTML node to determine our specific parameters.
 #
-sub _init {
-	my $self = shift;
-	my ($node) = @_;
-	logconfess "deferred";
+############################################################
+sub _init
+{
+    my $this = shift;
+    my ($node) = @_;
+    logconfess "deferred";
 }
 
+############################################################
 #
 # ->_parse_attr
 #
@@ -98,27 +101,34 @@ sub _init {
 # class attributes.  This structure is used to parse the node and setup
 # the object accordingly.
 #
-sub _parse_attr {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($node, $attr) = @_;
+############################################################
+sub _parse_attr
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($node, $attr) = @_;
 
-	DREQUIRE $node->isa("HTML::Element");
-	DREQUIRE ref $attr eq 'HASH';
+    DREQUIRE $node->isa("HTML::Element");
+    DREQUIRE ref $attr eq 'HASH';
 
-	while (my ($html_attr, $obj_attr) = each %$attr) {
-		my $val = $node->attr($html_attr);
-		$self->{$obj_attr} = $val if defined $val;
-	}
+    while (my ($html_attr, $obj_attr) = each %$attr)
+    {
+        my $val = $node->attr($html_attr);
+        $this->{$obj_attr} = $val if defined $val;
+    }
 
-	return DVOID;
+    return DVOID;
 }
 
 #
 # Attribute access
 #
 
-sub form	{ $_[0]->{form} }
+sub form
+{
+    my $this = shift;
+    return $this->{form};
+}
 
 #
 # Access to attributes that must be setup by heirs within _init()
@@ -128,127 +138,192 @@ sub form	{ $_[0]->{form} }
 # but it is always possible to query it.
 #
 
-sub name		{ $_[0]->{name} }
-sub value		{ $_[0]->{value} }
+sub name
+{
+    my $this = shift;
+    return $this->{name};
+}
 
-sub old_value	{ $_[0]->{old_value} }
-sub is_disabled	{ $_[0]->{is_disabled} }		# "grayed out"
+sub value
+{
+    my $this = shift;
+    return $this->{value};
+}
+
+sub old_value
+{
+    my $this = shift;
+    return $this->{old_value};
+}
+
+sub is_disabled
+{
+    my $this = shift;
+    return $this->{is_disabled};
+}    # "grayed out"
 
 #
 # Global widget predicates
 #
 
-sub is_read_only	{ 0 }		# Can change "value"
+sub is_read_only
+{
+    0
+}    # Can change "value"
 
 #
 # High-level classification predicates
 #
 
-sub is_button	{ 0 }
-sub is_input	{ 0 }
-sub is_menu		{ 0 }
-sub is_box		{ 0 }
-sub is_hidden	{ 0 }
-sub is_file		{ 0 }
+############################################################
+sub is_button
+{
+    return 0;
+}
+############################################################
+sub is_input
+{
+    return 0;
+}
+############################################################
+sub is_menu
+{
+    return 0;
+}
+############################################################
+sub is_box
+{
+    return 0;
+}
+############################################################
+sub is_hidden
+{
+    return 0;
+}
+############################################################
+sub is_file
+{
+    return 0;
+}
 
-sub gui_type	{ logconfess "deferred" }
+sub gui_type
+{
+    logconfess "deferred";
+}
 
+############################################################
 #
 # ->is_mutable
 #
 # Check whether it is possible to change widget's value from a user interface.
 # Optionally warn if widget's value cannot be changed.
 #
-sub is_mutable {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($warn) = @_;
+############################################################
+sub is_mutable
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($warn) = @_;
 
-	if ($self->is_disabled) {
-		logcarp 'cannot change value of disabled %s "%s"',
-			$self->gui_type, $self->name if $warn;
-		return DVAL 0;
-	}
+    if ($this->is_disabled)
+    {
+        logcarp 'cannot change value of disabled %s "%s"', $this->gui_type,
+          $this->name
+          if $warn;
+        return DVAL 0;
+    }
 
-	if ($self->is_read_only) {
-		logcarp 'cannot change value of read-only %s "%s"',
-			$self->gui_type, $self->name if $warn;
-		return DVAL 0;
-	}
+    if ($this->is_read_only)
+    {
+        logcarp 'cannot change value of read-only %s "%s"', $this->gui_type,
+          $this->name
+          if $warn;
+        return DVAL 0;
+    }
 
-	return DVAL 1;
+    return DVAL 1;
 }
 
+############################################################
 #
 # ->set_value
 #
 # Change value.
 # Only allowd to proceed if mutable.
 #
-sub set_value {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($value) = @_;
+############################################################
+sub set_value
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($value) = @_;
 
-	return DVOID unless $self->is_mutable(1);		# Cannot change value
-	return DVOID if $value eq $self->{value};		# No change
+    return DVOID unless $this->is_mutable(1);    # Cannot change value
+    return DVOID if $value eq $this->{value};    # No change
 
-	#
-	# To ease redefinition, let this call _frozen_set_value, which is
-	# not redefinable and performs the common operation.
-	#
+    #
+    # To ease redefinition, let this call _frozen_set_value, which is
+    # not redefinable and performs the common operation.
+    #
 
-	$self->_frozen_set_value($value);
-	return DVOID;
+    $this->_frozen_set_value($value);
+    return DVOID;
 }
 
+############################################################
 #
 # ->_frozen_set_value		-- frozen
 #
 # Change value.
 #
-sub _frozen_set_value {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($value) = @_;
+############################################################
+sub _frozen_set_value
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($value) = @_;
 
-	DREQUIRE $self->is_mutable(0);
+    DREQUIRE $this->is_mutable(0);
 
-	#
-	# The first time we do this, save current value in `old_value'.
-	#
+    #
+    # The first time we do this, save current value in `old_value'.
+    #
 
-	$self->{old_value} = $self->{value} unless exists $self->{old_value};
-	$self->{value} = $value;
+    $this->{old_value} = $this->{value} unless exists $this->{old_value};
+    $this->{value}     = $value;
 
-	return DVOID;
+    return DVOID;
 }
 
+############################################################
 #
 # ->reset_state
 #
 # Called when a "Reset" button is pressed to restore the value the widget
 # had upon form entry.
 #
-sub reset_state {
-	DFEATURE my $f_;
-	my $self = shift;
+############################################################
+sub reset_state
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	#
-	# If there is `old_value' attribute yet, then the value is already OK.
-	#
+    #
+    # If there is `old_value' attribute yet, then the value is already OK.
+    #
 
-	return DVOID unless exists $self->{old_value};
+    return DVOID unless exists $this->{old_value};
 
-	#
-	# Restore value from old_value, and delete this attribute to signal that
-	# the value is now back to its original setting.
-	#
+    #
+    # Restore value from old_value, and delete this attribute to signal that
+    # the value is now back to its original setting.
+    #
 
-	$self->{value} = delete $self->{old_value};
-	return DVOID;
+    $this->{value} = delete $this->{old_value};
+    return DVOID;
 }
 
+############################################################
 #
 # ->is_submitable
 #
@@ -260,21 +335,29 @@ sub reset_state {
 #
 # Returns true if submitable.
 #
-sub is_submitable {
-	DFEATURE my $f_;
-	my $self = shift;
+############################################################
+sub is_submitable
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	return DVAL 0 if $self->is_disabled;
-	return DVAL $self->_is_successful;
+    return DVAL 0 if $this->is_disabled;
+    return DVAL $this->_is_successful;
 }
 
+############################################################
 #
 # ->_is_successful
 #
 # Is the enabled widget "successful", according to W3C's specs?
 #
-sub _is_successful { logconfess "deferred" }
+############################################################
+sub _is_successful
+{
+    logconfess "deferred";
+}
 
+############################################################
 #
 # ->submit_tuples
 #
@@ -283,25 +366,30 @@ sub _is_successful { logconfess "deferred" }
 # scrollable lists only: each checkbox is a widget, and therefore can
 # return only one tuple.
 #
-sub submit_tuples {
-	DFEATURE my $f_;
-	my $self = shift;
+############################################################
+sub submit_tuples
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	DREQUIRE $self->is_submitable;
+    DREQUIRE $this->is_submitable();
 
-	return DARY ($self->name, $self->value);
+    return DARY($this->name(), $this->value());
 }
 
+############################################################
 #
 # ->delete
 #
 # Done with this widget, cleanup by breaking circular refs.
 #
-sub delete {
-	DFEATURE my $f_;
-	my $self = shift;
-	$self->{form} = undef;
-	return DVOID;
+############################################################
+sub delete
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    $this->{form} = undef;
+    return DVOID;
 }
 
 1;
@@ -495,9 +583,24 @@ when pressing a submit button.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

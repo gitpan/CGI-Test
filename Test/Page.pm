@@ -1,25 +1,15 @@
-#
-# $Id: Page.pm,v 0.1.1.1 2001/04/17 10:41:55 ram Exp $
+package CGI::Test::Page;
+use strict;
+####################################################################
+# $Id: Page.pm,v 1.2 2003/09/29 11:00:38 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+####################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Page.pm,v $
-# Revision 0.1.1.1  2001/04/17 10:41:55  ram
-# patch2: added note about possible parameters in content_type
-#
-# Revision 0.1  2001/03/31 10:54:03  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Page;
 
 #
 # An abstract representation of a page, returned by an HTTP request.
@@ -29,31 +19,78 @@ package CGI::Test::Page;
 use Carp::Datum;
 use Getargs::Long;
 use Log::Agent;
-
+######################################################################
 #
-# ->make
+# ->new
 #
 # Creation routine
 #
-sub make { logconfess "deferred" }
+######################################################################
+sub new
+{
+    logconfess "deferred";
+}
 
 #
 # Common attribute access
 #
 
-sub content_type	{ $_[0]->{content_type} }
-sub user			{ $_[0]->{user} }
-sub server			{ $_[0]->{server} }
+######################################################################
+sub content_type
+{
+    my $this = shift;
+    $this->{content_type};
+}
+
+######################################################################
+sub user
+{
+    my $this = shift;
+    $this->{user};
+}
+
+######################################################################
+sub server
+{
+    my $this = shift;
+    return $this->{server};
+}
+######################################################################
 
 #
 # Queries
 #
 
-sub error_code	{ 0 }			# Error code (0 = OK)
-sub is_error	{ 0 }			# True if page indicates HTTP error
-sub form_count	{ 0 }
-sub is_ok       { !$_[0]->is_error }
+######################################################################
+# Error code (0 = OK)
+######################################################################
+sub error_code
+{
+    0
+}
 
+######################################################################
+# True if page indicates HTTP error
+######################################################################
+sub is_error
+{
+    0
+}
+
+######################################################################
+sub form_count
+{
+    0
+}
+
+######################################################################
+sub is_ok
+{
+    my $this = shift;
+    return !$this->is_error;
+}
+
+######################################################################
 #
 # ->forms
 #
@@ -62,22 +99,27 @@ sub is_ok       { !$_[0]->is_error }
 #
 # Meant to be redefined in CGI::Test::Page::HTML.
 #
-sub forms {
-	DFEATURE my $f_;
-	my $self = shift;
-	return DVAL [];
+######################################################################
+sub forms
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    return DVAL [];
 }
 
+######################################################################
 #
 # ->delete
 #
 # Done with this page, cleanup by breaking circular refs.
 #
-sub delete {
-	DFEATURE my $f_;
-	my $self = shift;
-	$self->{server} = undef;
-	return DVOID;
+######################################################################
+sub delete
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    $this->{server} = undef;
+    return DVOID;
 }
 
 1;
@@ -185,9 +227,24 @@ authentication was made.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

@@ -1,22 +1,14 @@
-#
-# $Id: Form.pm,v 0.1 2001/03/31 10:54:01 ram Exp $
-#
+package CGI::Test::Form;
+use strict;
+####################################################################
+# $Id: Form.pm,v 1.2 2003/09/29 11:00:34 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+####################################################################
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Form.pm,v $
-# Revision 0.1  2001/03/31 10:54:01  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form;
 
 #
 # Class interfacing with the content of a <FORM> tag, which comes from
@@ -28,182 +20,488 @@ use Carp::Datum;
 use Log::Agent;
 
 #
-# ->make
+# We may not create an instance of all those classes, but the cost of
+# lazily requiring them would probably outweigh the cost of loading
+# them once and for all, on reasonably sized forms.
+#
+use CGI::Test::Form::Widget::Button::Submit;
+use CGI::Test::Form::Widget::Button::Reset;
+use CGI::Test::Form::Widget::Button::Image;
+use CGI::Test::Form::Widget::Button::Plain;
+use CGI::Test::Form::Widget::Input::Text_Field;
+use CGI::Test::Form::Widget::Input::Text_Area;
+use CGI::Test::Form::Widget::Input::Password;
+use CGI::Test::Form::Widget::Input::File;
+use CGI::Test::Form::Widget::Menu::List;
+use CGI::Test::Form::Widget::Menu::Popup;
+use CGI::Test::Form::Widget::Box::Radio;
+use CGI::Test::Form::Widget::Box::Check;
+use CGI::Test::Form::Widget::Hidden;
+
+######################################################################
+#
+# ->new
 #
 # Creation routine
 #
-sub make {
-	DFEATURE my $f_;
-	my $self = bless {}, shift;
-	my ($node, $page) = @_;
+######################################################################
+sub new
+{
+    DFEATURE my $f_;
+    my $this = bless {}, shift;
+    my ($node, $page) = @_;
 
-	DREQUIRE $node->isa("HTML::Element");
-	DREQUIRE $page->isa("CGI::Test::Page");
-	DREQUIRE $node->tag eq "form";
+    DREQUIRE $node->isa("HTML::Element");
+    DREQUIRE $page->isa("CGI::Test::Page");
+    DREQUIRE $node->tag eq "form";
 
-	$self->{tree} = $node;		# <FORM> is the root node of the tree
-	$self->{page} = $page;
+    $this->{tree} = $node;    # <FORM> is the root node of the tree
+    $this->{page} = $page;
 
-	$self->{enctype} = $node->attr("enctype") ||
-		"application/x-www-form-urlencoded";
-	$self->{method} = uc $node->attr("method") || "POST";
+    $this->{enctype} = $node->attr("enctype")
+      || "application/x-www-form-urlencoded";
+    $this->{method} = uc $node->attr("method") || "POST";
 
-	foreach my $attr (qw(action name accept accept-charset)) {
-		my $oattr = $attr;
-		$oattr =~ s/-/_/g;
-		my $value = $node->attr($attr);
-		$self->{$oattr} = $value if defined $value;
-	}
+    foreach my $attr (qw(action name accept accept-charset))
+    {
+        my $oattr = $attr;
+        $oattr =~ s/-/_/g;
+        my $value = $node->attr($attr);
+        $this->{$oattr} = $value if defined $value;
+    }
 
-	#
-	# Although ACTION is now required in newer HTML DTDs, it was optional
-	# in HTML 2.0 and defaults to the base URI of the document.
-	#
+    #
+    # Although ACTION is now required in newer HTML DTDs, it was optional
+    # in HTML 2.0 and defaults to the base URI of the document.
+    #
 
-	$self->{action} = $page->uri->as_string unless exists $self->{action};
+    $this->{action} = $page->uri->as_string unless exists $this->{action};
 
-	return DVAL $self;
+    return DVAL $this;
+}
+
+######################################################################
+# DEPRECATED
+######################################################################
+sub make
+{    #
+    my $class = shift;
+    return $class->new(@_);
 }
 
 #
 # Attribute access
 #
 
-sub tree			{ $_[0]->{tree} }
-sub page			{ $_[0]->{page} }
+######################################################################
+sub tree
+{
+    my $this = shift;
+    return $this->{tree};
+}
 
-sub enctype			{ $_[0]->{enctype} }
-sub action			{ $_[0]->{action} }
-sub method			{ $_[0]->{method} }
-sub name			{ $_[0]->{name} }
-sub accept			{ $_[0]->{accept} }
-sub accept_charset	{ $_[0]->{accept_charset} }
+######################################################################
+sub page
+{
+    my $this = shift;
+    return $this->{page};
+}
+
+######################################################################
+sub enctype
+{
+    my $this = shift;
+    return $this->{enctype};
+}
+
+######################################################################
+sub action
+{
+    my $this = shift;
+    return $this->{action};
+}
+
+######################################################################
+sub method
+{
+    my $this = shift;
+    return $this->{method};
+}
+
+######################################################################
+sub name
+{
+    my $this = shift;
+    return $this->{name};
+}
+
+######################################################################
+sub accept
+{
+    my $this = shift;
+    return $this->{accept};
+}
+
+######################################################################
+sub accept_charset
+{
+    my $this = shift;
+    return $this->{accept_charset};
+}
 
 #
 # Lazy attribute access
 #
 
-sub buttons		{ $_[0]->{buttons}    || $_[0]->_xtract("buttons") }
-sub inputs		{ $_[0]->{inputs}     || $_[0]->_xtract("inputs") }
-sub menus		{ $_[0]->{menus}      || $_[0]->_xtract("menus") }
-sub radios		{ $_[0]->{radios}     || $_[0]->_xtract("radios") }
-sub checkboxes	{ $_[0]->{checkboxes} || $_[0]->_xtract("checkboxes") }
-sub hidden		{ $_[0]->{hidden}     || $_[0]->_xtract("hidden") }
-sub widgets		{ $_[0]->{widgets}    || $_[0]->_xtract("widgets") }
+######################################################################
+sub buttons
+{
+    my $this = shift;
+    return $this->{buttons} || $this->_xtract("buttons");
+}
+
+######################################################################
+sub inputs
+{
+    my $this = shift;
+    return $this->{inputs} || $this->_xtract("inputs");
+}
+
+######################################################################
+sub menus
+{
+    my $this = shift;
+    return $this->{menus} || $this->_xtract("menus");
+}
+
+######################################################################
+sub radios
+{
+    my $this = shift;
+    return $this->{radios} || $this->_xtract("radios");
+}
+
+######################################################################
+sub checkboxes
+{
+    my $this = shift;
+    return $this->{checkboxes} || $this->_xtract("checkboxes");
+}
+
+######################################################################
+sub hidden
+{
+    my $this = shift;
+    return $this->{hidden} || $this->_xtract("hidden");
+}
+
+######################################################################
+sub widgets
+{
+    my $this = shift;
+    return $this->{widgets} || $this->_xtract("widgets");
+}
 
 #
 # Second-order lazy attributes
 #
 
-sub submits     { $_[0]->{submits}    || ($_[0]->{submits} = $_[0]->_submits) }
+######################################################################
+sub submits
+{
+    my $this = shift;
+    return $this->{submits} || ($this->{submits} = $this->_submits);
+}
 
-sub radio_groups	{ $_[0]->radios     && $_[0]->{radio_groups} }
-sub checkbox_groups	{ $_[0]->checkboxes && $_[0]->{checkbox_groups} }
-
+######################################################################
+sub radio_groups
+{
+    my $this = shift;
+    return $this->radios()
+      && $this->{radio_groups};
+}
+######################################################################
+sub checkbox_groups
+{
+    my $this = shift;
+    return $this->checkboxes()
+      && $this->{checkbox_groups};
+}
 
 #
 # Expanded lists -- syntactic sugar
 #
 
-sub button_list			{ @{$_[0]->buttons} }
-sub input_list			{ @{$_[0]->inputs} }
-sub menu_list			{ @{$_[0]->menus} }
-sub radio_list			{ @{$_[0]->radios} }
-sub checkbox_list		{ @{$_[0]->checkboxes} }
-sub hidden_list			{ @{$_[0]->hidden} }
-sub widget_list			{ @{$_[0]->widgets} }
-sub submit_list			{ @{$_[0]->submits} }
+######################################################################
+sub button_list
+{
+    my $this = shift;
+    return @{$this->buttons()};
+}
+######################################################################
+sub input_list
+{
+    my $this = shift;
+    return @{$this->inputs()};
+}
+######################################################################
+sub menu_list
+{
+    my $this = shift;
+    return @{$this->menus()};
+}
+######################################################################
+sub radio_list
+{
+    my $this = shift;
+    return @{$this->radios()};
+}
+######################################################################
+sub checkbox_list
+{
+    my $this = shift;
+    return @{$this->checkboxes()};
+}
+######################################################################
+sub hidden_list
+{
+    my $this = shift;
+    return @{$this->hidden()};
+}
+######################################################################
+sub widget_list
+{
+    my $this = shift;
+    return @{$this->widgets()};
+}
+######################################################################
+sub submit_list
+{
+    my $this = shift;
+    @{$this->submits()};
+}
 
 #
 # By parameter-name n-n widget access (one widget returned for each asked)
 #
 
-sub button_by_name		{ my $s = shift; $s->_by_name($s->buttons, @_) }
-sub input_by_name		{ my $s = shift; $s->_by_name($s->inputs, @_) }
-sub menu_by_name		{ my $s = shift; $s->_by_name($s->menus, @_) }
-sub radio_by_name		{ my $s = shift; $s->_by_name($s->radios, @_) }
-sub checkbox_by_name	{ my $s = shift; $s->_by_name($s->checkboxes, @_) }
-sub hidden_by_name		{ my $s = shift; $s->_by_name($s->hidden, @_) }
-sub widget_by_name		{ my $s = shift; $s->_by_name($s->widgets, @_) }
-sub submit_by_name		{ my $s = shift; $s->_by_name($s->submits, @_) }
+######################################################################
+sub button_by_name
+{
+    my $this = shift;
+    $this->_by_name($this->buttons, @_);
+}
+######################################################################
+sub input_by_name
+{
+    my $this = shift;
+    $this->_by_name($this->inputs, @_);
+}
+######################################################################
+sub menu_by_name
+{
+    my $this = shift;
+    $this->_by_name($this->menus, @_);
+}
+######################################################################
+sub radio_by_name
+{
+    my $this = shift;
+    $this->_by_name($this->radios, @_);
+}
+######################################################################
+sub checkbox_by_name
+{
+    my $this = shift;
+    $this->_by_name($this->checkboxes, @_);
+}
+######################################################################
+sub hidden_by_name
+{
+    my $this = shift;
+    $this->_by_name($this->hidden, @_);
+}
+######################################################################
+sub widget_by_name
+{
+    my $this = shift;
+    $this->_by_name($this->widgets, @_);
+}
+######################################################################
+sub submit_by_name
+{
+    my $this = shift;
+    return $this->_by_name($this->submits, @_);
+}
 
 #
 # By parameter-name 1-n widget access (many widgets may be returned, one asked)
 #
 
-sub buttons_named		{ my $s = shift; $s->_all_named($s->buttons, @_) }
-sub inputs_named		{ my $s = shift; $s->_all_named($s->inputs, @_) }
-sub menus_named			{ my $s = shift; $s->_all_named($s->menus, @_) }
-sub radios_named		{ my $s = shift; $s->_all_named($s->radios, @_) }
-sub checkboxes_named	{ my $s = shift; $s->_all_named($s->checkboxes, @_) }
-sub hidden_named		{ my $s = shift; $s->_all_named($s->hidden, @_) }
-sub widgets_named		{ my $s = shift; $s->_all_named($s->widgets, @_) }
-sub submits_named		{ my $s = shift; $s->_all_named($s->submits, @_) }
+######################################################################
+sub buttons_named
+{
+    my $this = shift;
+    return $this->_all_named($this->buttons, @_);
+}
+######################################################################
+sub inputs_named
+{
+    my $this = shift;
+    return $this->_all_named($this->inputs, @_);
+}
+######################################################################
+sub menus_named
+{
+    my $this = shift;
+    return $this->_all_named($this->menus, @_);
+}
+######################################################################
+sub radios_named
+{
+    my $this = shift;
+    return $this->_all_named($this->radios, @_);
+}
+######################################################################
+sub checkboxes_named
+{
+    my $this = shift;
+    return $this->_all_named($this->checkboxes, @_);
+}
+######################################################################
+sub hidden_named
+{
+    my $this = shift;
+    return $this->_all_named($this->hidden, @_);
+}
+######################################################################
+sub widgets_named
+{
+    my $this = shift;
+    return $this->_all_named($this->widgets, @_);
+}
+######################################################################
+sub submits_named
+{
+    my $this = shift;
+    return $this->_all_named($this->submits, @_);
+}
 
 #
 # Convenience routines around ->_matching().
 #
 
-sub buttons_matching	{ my $s = shift; $s->_matching($s->buttons, @_) }
-sub inputs_matching		{ my $s = shift; $s->_matching($s->inputs, @_) }
-sub menus_matching		{ my $s = shift; $s->_matching($s->menus, @_) }
-sub radios_matching		{ my $s = shift; $s->_matching($s->radios, @_) }
-sub checkboxes_matching	{ my $s = shift; $s->_matching($s->checkboxes, @_) }
-sub hidden_matching		{ my $s = shift; $s->_matching($s->hidden, @_) }
-sub widgets_matching	{ my $s = shift; $s->_matching($s->widgets, @_) }
-sub submits_matching	{ my $s = shift; $s->_matching($s->submits, @_) }
+######################################################################
+sub buttons_matching
+{
+    my $this = shift;
+    return $this->_matching($this->buttons, @_);
+}
+######################################################################
+sub inputs_matching
+{
+    my $this = shift;
+    return $this->_matching($this->inputs, @_);
+}
+######################################################################
+sub menus_matching
+{
+    my $this = shift;
+    return $this->_matching($this->menus, @_);
+}
+######################################################################
+sub radios_matching
+{
+    my $this = shift;
+    return $this->_matching($this->radios, @_);
+}
+######################################################################
+sub checkboxes_matching
+{
+    my $this = shift;
+    return $this->_matching($this->checkboxes, @_);
+}
+######################################################################
+sub hidden_matching
+{
+    my $this = shift;
+    return $this->_matching($this->hidden, @_);
+}
+######################################################################
+sub widgets_matching
+{
+    my $this = shift;
+    return $this->_matching($this->widgets, @_);
+}
+######################################################################
+sub submits_matching
+{
+    my $this = shift;
+    return $this->_matching($this->submits, @_);
+}
 
+######################################################################
 #
 # ->reset
 #
 # Reset form state, restoring all the widget controls to the value they
 # had upon entry.
 #
-sub reset {
-	DFEATURE my $f_;
-	my $self = shift;
+######################################################################
+sub reset
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	foreach my $w ($self->widget_list) {
-		$w->reset_state;
-	}
-	return DVOID;
+    foreach my $w ($this->widget_list)
+    {
+        $w->reset_state;
+    }
+    return DVOID;
 }
 
+######################################################################
 #
 # ->submit
 #
 # Submit this form.
 # Returns resulting CGI::Test::Page.
 #
-sub submit {
-	DFEATURE my $f_;
-	my $self = shift;
+######################################################################
+sub submit
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	my $method = $self->method;
-	my $input = $self->_output;		# Input to the request we're about to make
-	my $action = $self->_action_url;
-	my $page = $self->page;
-	my $server = $page->server;
-	my $result;
+    my $method = $this->method;
+    my $input  = $this->_output;    # Input to the request we're about to make
+    my $action = $this->_action_url;
+    my $page   = $this->page;
+    my $server = $page->server;
+    my $result;
 
-	if ($method eq "GET") {
-		logconfess "GET requests only allowed URL encoding, not %s",
-			$input->mime_type
-			unless $input->mime_type eq "application/x-www-form-urlencoded";
+    if ($method eq "GET")
+    {
+        logconfess "GET requests only allowed URL encoding, not %s",
+          $input->mime_type
+          unless $input->mime_type eq "application/x-www-form-urlencoded";
 
-		$action->query($input->data);
-		$result = $server->GET($action->as_string, $page->user);
-	}
-	elsif ($method eq "POST") {
-		$result = $server->POST($action->as_string, $input, $page->user);
-	}
-	else {
-		logconfess "unsupported method $method for FORM action";
-	}
+        $action->query($input->data);
+        $result = $server->GET($action->as_string, $page->user);
+    }
+    elsif ($method eq "POST")
+    {
+        $result = $server->POST($action->as_string, $input, $page->user);
+    }
+    else
+    {
+        logconfess "unsupported method $method for FORM action";
+    }
 
-	return DVAL $result;
+    return DVAL $result;
 }
 
+######################################################################
 #
 # ->_xtract
 #
@@ -229,162 +527,158 @@ sub submit {
 # specific list, given in $which.  Therefore, returns a list ref on that
 # particular set.
 #
-sub _xtract {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($which) = @_;
+######################################################################
+sub _xtract
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($which) = @_;
 
-	#
-	# We may not create an instance of all those classes, but the cost of
-	# lazily requiring them would probably outweigh the cost of loading
-	# them once and for all, on reasonably sized forms.
-	#
+    #
+    # Initiate traversal to locate all widgets nodes.
+    #
 
-	require CGI::Test::Form::Widget::Button::Submit;
-	require CGI::Test::Form::Widget::Button::Reset;
-	require CGI::Test::Form::Widget::Button::Image;
-	require CGI::Test::Form::Widget::Button::Plain;
-	require CGI::Test::Form::Widget::Input::Text_Field;
-	require CGI::Test::Form::Widget::Input::Text_Area;
-	require CGI::Test::Form::Widget::Input::Password;
-	require CGI::Test::Form::Widget::Input::File;
-	require CGI::Test::Form::Widget::Menu::List;
-	require CGI::Test::Form::Widget::Menu::Popup;
-	require CGI::Test::Form::Widget::Box::Radio;
-	require CGI::Test::Form::Widget::Box::Check;
-	require CGI::Test::Form::Widget::Hidden;
+    my %is_widget = map {$_ => 1} qw(input textarea select button isindex);
+    my @wg = $this->tree->look_down(sub {$is_widget{$_[ 0 ]->tag}});
 
-	#
-	# Initiate traversal to locate all widgets nodes.
-	#
+    #
+    # Initialize all lists to be empty
+    #
 
-	my %is_widget = map { $_ => 1 } qw(input textarea select button isindex);
-	my @wg = $self->tree->look_down(
-		sub { $is_widget{$_[0]->tag} }
-	);
+    foreach my $attr qw(buttons inputs radios checkboxes hidden menus widgets)
+    {
+        $this->{$attr} = [];
+    }
 
-	#
-	# Initialize all lists to be empty
-	#
+    #
+    # And now sort them out.
+    #
 
-	foreach my $attr (
-		qw(buttons inputs radios checkboxes hidden menus widgets)
-	) {
-		$self->{$attr} = [];
-	}
+    my %input = (    #  [ class name,		 attribute ]
+                  "submit"   => [ 'Button::Submit',    "buttons" ],
+                  "reset"    => [ 'Button::Reset',     "buttons" ],
+                  "image"    => [ 'Button::Image',     "buttons" ],
+                  "text"     => [ 'Input::Text_Field', "inputs" ],
+                  "file"     => [ 'Input::File',       "inputs" ],
+                  "password" => [ 'Input::Password',   "inputs" ],
+                  "radio"    => [ 'Box::Radio',        "radios" ],
+                  "checkbox" => [ 'Box::Check',        "checkboxes" ],
+                  "hidden"   => [ 'Hidden',            "hidden" ],
+                  );
 
-	#
-	# And now sort them out.
-	#
+    my %button = (    #  [ class name,		 attribute ]
+                   "submit" => [ 'Button::Submit', "buttons" ],
+                   "reset"  => [ 'Button::Reset',  "buttons" ],
+                   "button" => [ 'Button::Plain',  "buttons" ],
+                   );
 
-	my %input = (	#  [ class name,		 attribute ]
-		"submit"	=> ['Button::Submit',	 "buttons"],
-		"reset"		=> ['Button::Reset',	 "buttons"],
-		"image"		=> ['Button::Image',	 "buttons"],
-		"text"		=> ['Input::Text_Field', "inputs"],
-		"file"		=> ['Input::File',    	 "inputs"],
-		"password"	=> ['Input::Password',   "inputs"],
-		"radio"		=> ['Box::Radio',		 "radios"],
-		"checkbox"	=> ['Box::Check',		 "checkboxes"],
-		"hidden"	=> ['Hidden',			 "hidden"],
-	);
+    my $wlist = $this->{widgets};    # All widgets also inserted there
 
-	my %button = (	#  [ class name,		 attribute ]
-		"submit"	=> ['Button::Submit',	 "buttons"],
-		"reset"		=> ['Button::Reset',	 "buttons"],
-		"button"	=> ['Button::Plain',	 "buttons"],
-	);
+    foreach my $node (@wg)
+    {
+        my $tag = $node->tag;
+        my ($class, $attr);
+        my $hlookup;
 
-	my $wlist = $self->{widgets};		# All widgets also inserted there
+        if ($tag eq "input")
+        {
+            $hlookup = \%input;
+        }
+        elsif ($tag eq "textarea")
+        {
+            ($class, $attr) = ("Input::Text_Area", "inputs");
+        }
+        elsif ($tag eq "select")
+        {
+            $attr  = "menus";
+            $class =
+              ($node->attr("multiple") || defined $node->attr("size"))
+              ? "Menu::List"
+              : "Menu::Popup";
+        }
+        elsif ($tag eq "button")
+        {
+            $hlookup = \%button;
+        }
+        elsif ($tag eq "isindex")
+        {
+            logwarn "ISINDEX is deprecated, ignoring %s", $node->starttag;
+            next;
+        }
+        else
+        {
+            logconfess "reached tag '$tag': invalid tree look_down()?";
+        }
 
-	foreach my $node (@wg) {
-		my $tag = $node->tag;
-		my ($class, $attr);
-		my $hlookup;
+        #
+        # If $hlookup is defined, we need to look at the TYPE attribute
+        # within the tag to determine the object to build.
+        #
+        # This handles <INPUT TYPE="xxx"> and <BUTTON TYPE="xxx">
+        #
 
-		if ($tag eq "input") {
-			$hlookup = \%input;
-		}
-		elsif ($tag eq "textarea") {
-			($class, $attr) = ("Input::Text_Area", "inputs");
-		}
-		elsif ($tag eq "select") {
-			$attr = "menus";
-			$class = ($node->attr("multiple") || defined $node->attr("size")) ?
-				"Menu::List" : "Menu::Popup";
-		}
-		elsif ($tag eq "button") {
-			$hlookup = \%button;
-		}
-		elsif ($tag eq "isindex") {
-			logwarn "ISINDEX is deprecated, ignoring %s", $node->starttag;
-			next;
-		}
-		else {
-			logconfess "reached tag '$tag': invalid tree look_down()?"
-		}
+        if (defined $hlookup)
+        {
+            my $type = $node->attr("type");
+            unless (defined $type)
+            {
+                logerr "missing TYPE indication in %s: %s", uc($tag),
+                  $node->starttag;
+                next;
+            }
+            my $info = $hlookup->{lc($type)};
+            unless (defined $info)
+            {
+                logerr "unknown TYPE '%s' in %s: %s", $type, uc($tag),
+                  $node->starttag;
+                next;
+            }
 
-		#
-		# If $hlookup is defined, we need to look at the TYPE attribute
-		# within the tag to determine the object to build.
-		#
-		# This handles <INPUT TYPE="xxx"> and <BUTTON TYPE="xxx">
-		#
-		
-		if (defined $hlookup) {
-			my $type = $node->attr("type");
-			unless (defined $type) {
-				logerr "missing TYPE indication in %s: %s",
-					uc($tag), $node->starttag;
-				next;
-			}
-			my $info = $hlookup->{lc($type)};
-			unless (defined $info) {
-				logerr "unknown TYPE '%s' in %s: %s",
-					$type, uc($tag), $node->starttag;
-				next;
-			}
+            ($class, $attr) = @$info;
+        }
 
-			($class, $attr) = @$info;
-		}
+       #
+       # Create object of given class, insert into attribute list.
+       # Objects will not keep a reference on the node, but will reference us.
+       #
 
-		#
-		# Create object of given class, insert into attribute list.
-		# Objects will not keep a reference on the node, but will reference us.
-		#
+        my $obj = "CGI::Test::Form::Widget::$class"->new($node, $this);
+        push @{$this->{$attr}}, $obj;
+        push @$wlist, $obj;
+    }
 
-		my $obj = "CGI::Test::Form::Widget::$class"->make($node, $self);
-		push @{$self->{$attr}}, $obj;
-		push @$wlist, $obj;
-	}
+    #
+    # Special handling for radio buttons: they need to be groupped, so that
+    # selecting one automatically unselects others from the same group.
+    #
+    # Special handling for checkboxes: one may wish to get at a "group of
+    # checkboxes" instead of an individual checkbox widget.
+    #
 
-	#
-	# Special handling for radio buttons: they need to be groupped, so that
-	# selecting one automatically unselects others from the same group.
-	#
-	# Special handling for checkboxes: one may wish to get at a "group of
-	# checkboxes" instead of an individual checkbox widget.
-	#
+    my $radios     = $this->{radios};
+    my $checkboxes = $this->{checkboxes};
 
-	my $radios     = $self->{radios};
-	my $checkboxes = $self->{checkboxes};
+    if (@$radios)
+    {
+        require CGI::Test::Form::Group;
+        $this->{radio_groups} = CGI::Test::Form::Group->new($radios);
+    }
 
-	if (@$radios) {
-		require CGI::Test::Form::Group;
-		$self->{radio_groups} = CGI::Test::Form::Group->make($radios);
-	}
-	if (@$checkboxes) {
-		require CGI::Test::Form::Group;
-		$self->{checkbox_groups} = CGI::Test::Form::Group->make($checkboxes);
-	}
+    if (@$checkboxes)
+    {
+        require CGI::Test::Form::Group;
+        $this->{checkbox_groups} = CGI::Test::Form::Group->new($checkboxes);
+    }
 
-	#
-	# Finally, return the list they asked for.
-	#
+    #
+    # Finally, return the list they asked for.
+    #
 
-	return DVAL $self->{$which}
+    return DVAL $this->{
+        $which};
 }
 
+######################################################################
 #
 # ->_by_name
 #
@@ -400,24 +694,28 @@ sub _xtract {
 # For widgets which may be groupped (e.g. radios or checkboxes), the item
 # selected is the last one bearing that name within the form.
 #
-sub _by_name {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($wlist, @names) = @_;
+######################################################################
+sub _by_name
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($wlist, @names) = @_;
 
-	VERIFY ref $wlist eq 'ARRAY';
+    VERIFY ref $wlist eq 'ARRAY';
 
-	my %byname = map { $_->name => $_ } @$wlist;
-	my @results = map { $byname{$_} } @names;
+    my %byname  = map {$_->name => $_} @$wlist;
+    my @results = map {$byname{$_}} @names;
 
-	if (@names == 1) {
-		return DARY @results if wantarray;
-		return DVAL $results[0];
-	}
+    if (@names == 1)
+    {
+        return DARY @results if wantarray;
+        return DVAL $results[ 0 ];
+    }
 
-	return DARY @results;
+    return DARY @results;
 }
 
+######################################################################
 #
 # ->_all_named
 #
@@ -427,17 +725,20 @@ sub _by_name {
 # Extract and return a list of widgets from a list, by comparing names.
 # If no widget of corresponding name exists, returns an empty list.
 # Otherwise returns the list of all widgets bearing that name.
-# 
-sub _all_named {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($wlist, $name) = @_;
+#
+######################################################################
+sub _all_named
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($wlist, $name) = @_;
 
-	VERIFY ref $wlist eq 'ARRAY';
+    VERIFY ref $wlist eq 'ARRAY';
 
-	return DARY grep { $_->name eq $name } @$wlist;
+    return DARY grep {$_->name eq $name} @$wlist;
 }
 
+######################################################################
 #
 # ->_matching
 #
@@ -448,59 +749,68 @@ sub _all_named {
 # where $context is one of the select routine parameters.
 # Returns list of widgets for which the callback returned true.
 #
-sub _matching {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($wlist, $code, $context) = @_;
+######################################################################
+sub _matching
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($wlist, $code, $context) = @_;
 
-	VERIFY ref $wlist eq 'ARRAY';
-	VERIFY ref $code eq 'CODE';
+    VERIFY ref $wlist eq 'ARRAY';
+    VERIFY ref $code  eq 'CODE';
 
-	return DARY grep { &$code($_, $context) } @$wlist;
+    return DARY grep {&$code($_, $context)} @$wlist;
 }
 
+######################################################################
 #
 # ->delete
 #
 # Done with this page, cleanup by breaking circular & multiple refs.
 #
-sub delete {
-	DFEATURE my $f_;
-	my $self = shift;
+######################################################################
+sub delete
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	$self->{node} = undef;
-	$self->{page} = undef;
+    $this->{node} = undef;
+    $this->{page} = undef;
 
-	delete $self->{submits};
+    delete $this->{submits};
 
-	#
-	# Handle lazy attributes.
-	#
+    #
+    # Handle lazy attributes.
+    #
 
-	if (ref $self->{widgets}) {
-		#
-		# Each widget has a reference on us, which must be cleared.
-		#
+    if (ref $this->{widgets})
+    {
 
-		foreach my $w (@{$self->{widgets}}) {
-			$w->delete;
-		}
+        #
+        # Each widget has a reference on us, which must be cleared.
+        #
 
-		#
-		# All widget objects have two references from here: one through their
-		# type list, and one through the general "widgets" list.  Simply
-		# break the "widgets" list.
-		#
+        foreach my $w (@{$this->{widgets}})
+        {
+            $w->delete;
+        }
 
-		$self->{widgets} = undef;
-	}
+        #
+        # All widget objects have two references from here: one through their
+        # type list, and one through the general "widgets" list.  Simply
+        # break the "widgets" list.
+        #
 
-	$self->{radio_groups}->delete		if ref $self->{radio_groups};
-	$self->{checkbox_groups}->delete	if ref $self->{checkbox_groups};
+        $this->{widgets} = undef;
+    }
 
-	return DVOID;
+    $this->{radio_groups}->delete    if ref $this->{radio_groups};
+    $this->{checkbox_groups}->delete if ref $this->{checkbox_groups};
+
+    return DVOID;
 }
 
+######################################################################
 #
 # ->_output
 #
@@ -508,43 +818,48 @@ sub delete {
 # widgets.  That object can then generate the data to be used as input of
 # the form's action URL, depending on the form's encoding type.
 #
-sub _output {
-	DFEATURE my $f_;
-	my $self = shift;
+######################################################################
+sub _output
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	my $enctype = $self->enctype;
-	my $input;
+    my $enctype = $this->enctype;
+    my $input;
 
-	#
-	# Create polymorphic form input object, holding this form's output.
-	#
-	# It's called "input" because its data are meant to be the input of the
-	# target CGI script.
-	#
+    #
+    # Create polymorphic form input object, holding this form's output.
+    #
+    # It's called "input" because its data are meant to be the input of the
+    # target CGI script.
+    #
 
-	if ($enctype eq "multipart/form-data") {
-		require CGI::Test::Input::Multipart;
-		$input = CGI::Test::Input::Multipart->make();
-	} else {
-		logwarn "unknown FORM encoding type $enctype, using default"
-			if $enctype ne "application/x-www-form-urlencoded";
-		require CGI::Test::Input::URL;
-		$input = CGI::Test::Input::URL->make();
-	}
+    if ($enctype eq "multipart/form-data")
+    {
+        require CGI::Test::Input::Multipart;
+        $input = CGI::Test::Input::Multipart->new();
+    }
+    else
+    {
+        logwarn "unknown FORM encoding type $enctype, using default"
+          if $enctype ne "application/x-www-form-urlencoded";
+        require CGI::Test::Input::URL;
+        $input = CGI::Test::Input::URL->new();
+    }
 
-	#
-	# Add all submitable widgets.
-	#
+    #
+    # Add all submitable widgets.
+    #
 
-	foreach my $w (
-		$self->widgets_matching(sub { $_[0]->is_submitable })
-	) {
-		$input->add_widget($w);
-	}
+    foreach my $w ($this->widgets_matching(sub {$_[ 0 ]->is_submitable}))
+    {
+        $input->add_widget($w);
+    }
 
-	return DVAL $input;
+    return DVAL $input;
 }
 
+######################################################################
 #
 # ->_action_url
 #
@@ -554,35 +869,40 @@ sub _output {
 # We force re-anchor to the server if the action URL is not tied to it
 # explicitely (e.g. ACTION="/cgi-bin/foo").
 #
-sub _action_url {
-	DFEATURE my $f_;
-	my $self = shift;
+######################################################################
+sub _action_url
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	my $uri = $self->page->uri;			# The URL that generated this form
-	my $host_port = $uri->host_port;
+    my $uri       = $this->page->uri;    # The URL that generated this form
+    my $host_port = $uri->host_port;
 
-	require URI;
+    require URI;
 
-	my $action = URI->new($self->action, "http");
-	$action->scheme("http");
-	$action->host_port($uri->host_port) unless defined $action->host_port;
+    my $action = URI->new($this->action, "http");
+    $action->scheme("http");
+    $action->host_port($uri->host_port) unless defined $action->host_port;
 
-	return DVAL $action;
+    return DVAL $action;
 }
 
+######################################################################
 #
 # ->_submits
 #
 # Compute list of submit buttons.
 # Returns ref to this list.
 #
-sub _submits {
-	DFEATURE my $f_;
-	my $self = shift;
+######################################################################
+sub _submits
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	my @submit = $self->buttons_matching(sub { $_[0]->is_submit });
+    my @submit = $this->buttons_matching(sub {$_[ 0 ]->is_submit});
 
-	return DVAL \@submit;
+    return DVAL \@submit;
 }
 
 1;
@@ -898,9 +1218,24 @@ Submit the form, returning a C<CGI::Test::Page> reply.
 
 There are documentation bugs, problably, and implementation bugs, improbably.
 
+=head1 WEBSITE
+
+You can find information about CGI::Test and other related modules at:
+
+	http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by 
+SourceForge <http://www.sourceforge.net>. You can access it by going to:
+
+	http://sourceforge.net/cvs/?group_id=89570
+
 =head1 AUTHOR
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

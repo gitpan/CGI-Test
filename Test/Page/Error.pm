@@ -1,22 +1,14 @@
-#
-# $Id: Error.pm,v 0.1 2001/03/31 10:54:03 ram Exp $
+package CGI::Test::Page::Error;
+use strict;
+####################################################################
+# $Id: Error.pm,v 1.2 2003/09/29 11:00:48 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+####################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
-#
-# HISTORY
-# $Log: Error.pm,v $
-# Revision 0.1  2001/03/31 10:54:03  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Page::Error;
 
 #
 # A reply to an HTTP request resulted in an error.
@@ -26,35 +18,49 @@ use Carp::Datum;
 use Getargs::Long;
 
 require CGI::Test::Page;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Page);
+use base qw(CGI::Test::Page);
 
+############################################################
 #
-# ->make
+# ->new
 #
 # Creation routine
 #
-sub make {
-	DFEATURE my $f_;
-	my $self = bless {}, shift;
-	my ($errcode, $server) = @_;
-	$self->{error_code} = $errcode;
-	$self->{server} = $server;
-	return DVAL $self;
+############################################################
+sub new
+{
+    DFEATURE my $f_;
+    my $this = bless {}, shift;
+    my ($errcode, $server) = @_;
+    $this->{error_code} = $errcode;
+    $this->{server}     = $server;
+    return DVAL $this;
 }
 
 #
 # Attribute access
 #
 
-sub error_code	{ $_[0]->{error_code} }		# redefined as attribute
+############################################################
+sub error_code
+{
+    my $this = shift;
+    return $this->{error_code};
+}    # redefined as attribute
 
 #
 # Redefined features
 #
-
-sub is_error		{ 1 }
-sub content_type	{ "text/html" }
+############################################################
+sub is_error
+{
+    return 1;
+}
+############################################################
+sub content_type
+{
+    return "text/html";
+}
 
 1;
 
@@ -71,9 +77,24 @@ CGI::Test::Page::Error - An HTTP error page
 This class represents an HTTP error page.
 Its interface is the same as the one described in L<CGI::Test::Page>.
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

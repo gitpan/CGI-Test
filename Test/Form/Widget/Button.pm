@@ -1,67 +1,62 @@
-#
-# $Id: Button.pm,v 0.1 2001/03/31 10:54:01 ram Exp $
+package CGI::Test::Form::Widget::Button;
+use strict;
+##################################################################
+# $Id: Button.pm,v 1.2 2003/09/29 11:00:38 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Button.pm,v $
-# Revision 0.1  2001/03/31 10:54:01  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Button;
-
 #
 # This class models a FORM button.
 #
 
 require CGI::Test::Form::Widget;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget);
+use base qw(CGI::Test::Form::Widget);
 
 use Carp::Datum;
 use Log::Agent;
 
+############################################################
 #
-# ->make_button
+# ->new
 #
 # Creation routine for <BUTTON> elements.
 #
-sub make_button {
-	DFEATURE my $f_;
-	my $self = bless {}, shift;
-	my ($node, $form) = @_;
+############################################################
+sub new
+{
+    DFEATURE my $f_;
+    my $this = bless {}, shift;
+    my ($node, $form) = @_;
 
-	#
-	# Can't create a CGI::Test::Form::Widget::Button object, only heirs.
-	#
+    #
+    # Can't create a CGI::Test::Form::Widget::Button object, only heirs.
+    #
 
-	logconfess "%s is a deferred class", __PACKAGE__
-		if ref $self eq __PACKAGE__;
+    logconfess "%s is a deferred class", __PACKAGE__
+      if ref $this eq __PACKAGE__;
 
-	DREQUIRE $node->isa("HTML::Element");
-	DREQUIRE $form->isa("CGI::Test::Form");
-	DREQUIRE $node->tag eq "button", "creation routine for <BUTTON>";
+    DREQUIRE $node->isa("HTML::Element");
+    DREQUIRE $form->isa("CGI::Test::Form");
+    DREQUIRE $node->tag eq "button", "creation routine for <BUTTON>";
 
-	$self->_common_init($form);
+    $this->_common_init($form);
 
-	#
-	# We don't keep any reference on the node.
-	# Analyze the HTML tree to determine some parameters.
-	#
+    #
+    # We don't keep any reference on the node.
+    # Analyze the HTML tree to determine some parameters.
+    #
 
-	$self->_init_button($node);
+    $this->_init_button($node);
 
-	return DVAL $self;
+    return DVAL $this;
 }
 
+############################################################
 #
 # %attr
 # %attr_button
@@ -70,68 +65,86 @@ sub make_button {
 # to translate that into class attributes.  The %attr_button is specific
 # to the <BUTTON> tags.
 #
+############################################################
 
-my %attr = (
-	'name'		=> 'name',
-	'value'		=> 'value',
-	'disabled'	=> 'is_disabled',
-);
+my %attr = ('name'     => 'name',
+            'value'    => 'value',
+            'disabled' => 'is_disabled',
+            );
 
-my %attr_button = (
-	%attr,
-);
+my %attr_button = (%attr,);
 
+############################################################
 #
 # ->_init
 #
 # Per-widget initialization routine, for <INPUT>.
 # Parse HTML node to determine our specific parameters.
 #
-sub _init {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($node) = shift;
-	$self->_parse_attr($node, \%attr);
-	$self->{is_enhanced} = 0;
-	$self->{is_pressed} = 0;
-	return DVOID;
+############################################################
+sub _init
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($node) = shift;
+    $this->_parse_attr($node, \%attr);
+    $this->{is_enhanced} = 0;
+    $this->{is_pressed}  = 0;
+    return DVOID;
 }
 
+############################################################
 #
 # ->_init_button
 #
 # Per-widget initialization routine, for <BUTTON>.
 # Parse HTML node to determine our specific parameters.
 #
-sub _init_button {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($node) = shift;
-	$self->_parse_attr($node, \%attr_button);
-	$self->{is_enhanced} = 1;
-	$self->{is_pressed} = 0;
-	return DVOID;
+############################################################
+sub _init_button
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($node) = shift;
+    $this->_parse_attr($node, \%attr_button);
+    $this->{is_enhanced} = 1;
+    $this->{is_pressed}  = 0;
+    return DVOID;
 }
 
+############################################################
 #
 # ->_is_successful		-- defined
 #
 # Is the enabled widget "successful", according to W3C's specs?
 # Any pressed button is.
 #
-sub _is_successful {
-	DFEATURE my $f_;
-	my $self = shift;
-	return DVAL $self->is_pressed;
+############################################################
+sub _is_successful
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    return DVAL $this->is_pressed();
 }
 
 #
 # Attribute access
 #
 
-sub is_enhanced	{ $_[0]->{is_enhanced} }	# True for <BUTTON> elements
-sub is_pressed	{ $_[0]->{is_pressed} }
+############################################################
+sub is_enhanced
+{
+    my $this = shift;
+    return $this->{is_enhanced};
+}    # True for <BUTTON> elements
+############################################################
+sub is_pressed
+{
+    my $this = shift;
+    return $this->{is_pressed};
+}
 
+############################################################
 #
 # ->press
 #
@@ -144,67 +157,95 @@ sub is_pressed	{ $_[0]->{is_pressed} }
 #
 # Returns undef if no submit is done, a new CGI::Test::Page otherwise.
 #
-sub press {
-	DFEATURE my $f_;
-	my $self = shift;
+############################################################
+sub press
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	#
-	# Default action: do nothing
-	# Routine is redefined in heirs when processing required.
-	#
+    #
+    # Default action: do nothing
+    # Routine is redefined in heirs when processing required.
+    #
 
-	logwarn 'ignoring button press: name="%s", value="%s"',
-		$self->name, $self->value;
+    logwarn 'ignoring button press: name="%s", value="%s"', $this->name(),
+      $this->value();
 
-	return DVAL undef;
+    return DVAL undef;
 }
 
+############################################################
 #
 # ->set_is_pressed
 #
 # Press or unpress button.
 #
-sub set_is_pressed {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($pressed) = @_;
-	$self->{is_pressed} = $pressed;
-	return DVOID;
+############################################################
+sub set_is_pressed
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($pressed) = @_;
+    $this->{is_pressed} = $pressed;
+    return DVOID;
 }
 
+############################################################
 #
 # ->reset_state			-- redefined
 #
 # Called when a "Reset" button is pressed to restore the value the widget
 # had upon form entry.
 #
-sub reset_state {
-	DFEATURE my $f_;
-	my $self = shift;
-	$self->{is_pressed} = 0;
-	return DVOID;
+############################################################
+sub reset_state
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    $this->{is_pressed} = 0;
+    return DVOID;
 }
 
+############################################################
 #
 #
 # Global widget predicates
 #
-
-sub is_read_only	{ 1 }
+############################################################
+sub is_read_only
+{
+    return 1;
+}
 
 #
 # Button predicates
 #
 
-sub is_reset	{ 0 }
-sub is_submit	{ 0 }
-sub is_plain	{ 0 }
+############################################################
+sub is_reset
+{
+    return 0;
+}
+############################################################
+sub is_submit
+{
+    return 0;
+}
+############################################################
+sub is_plain
+{
+    return 0;
+}
 
 #
 # High-level classification predicates
 #
 
-sub is_button	{ 1 }
+############################################################
+sub is_button
+{
+    return 1;
+}
 
 1;
 
@@ -303,9 +344,24 @@ this feature directly.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

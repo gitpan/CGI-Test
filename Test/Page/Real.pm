@@ -1,22 +1,14 @@
-#
-# $Id: Real.pm,v 0.1 2001/03/31 10:54:03 ram Exp $
+package CGI::Test::Page::Real;
+use strict;
+####################################################################
+# $Id: Real.pm,v 1.2 2003/09/29 11:00:49 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+####################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
-#
-# HISTORY
-# $Log: Real.pm,v $
-# Revision 0.1  2001/03/31 10:54:03  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Page::Real;
 
 #
 # An abstract interface to a real page, which is the result of a valid output
@@ -29,47 +21,63 @@ use Getargs::Long;
 use Log::Agent;
 
 require CGI::Test::Page;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Page);
+use base qw(CGI::Test::Page);
 
 #
-# ->make
+# ->new
 #
 # Creation routine
 #
-sub make { logconfess "deferred" }
+sub new
+{
+    logconfess "deferred";
+}
 
 #
 # Attribute access
 #
 
-sub raw_content		{ $_[0]->{raw_content} }
-sub uri				{ $_[0]->{uri} }
+sub raw_content
+{
+    my $this = shift;
+    return $this->{raw_content};
+}
 
-sub raw_content_ref	{ \$_[0]->{raw_content} }
+sub uri
+{
+    my $this = shift;
+    return $this->{uri};
+}
+
+sub raw_content_ref
+{
+    my $this = shift;
+    return \$this->{raw_content};
+}
 
 #
 # ->_init
 #
 # Initialize common attributes
 #
-sub _init {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($server, $file, $ctype, $user, $uri) =
-		cxgetargs(@_, { -strict => 0, -extra => 0 },
-			-server			=> 'CGI::Test',		# XXX may be extended one day
-			-file			=> 's',
-			-content_type	=> 's',
-			-user			=> undef,
-			-uri			=> 'URI',
-		);
-	$self->{server} = $server;
-	$self->{content_type} = $ctype;
-	$self->{user} = $user;
-	$self->{uri} = $uri;
-	$self->_read_raw_content($file);
-	return DVOID;
+sub _init
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($server, $file, $ctype, $user, $uri) = cxgetargs(
+        @_, {-strict => 0, -extra => 0},
+        -server       => 'CGI::Test',    # XXX may be extended one day
+        -file         => 's',
+        -content_type => 's',
+        -user         => undef,
+        -uri          => 'URI',
+        );
+    $this->{server}       = $server;
+    $this->{content_type} = $ctype;
+    $this->{user}         = $user;
+    $this->{uri}          = $uri;
+    $this->_read_raw_content($file);
+    return DVOID;
 }
 
 #
@@ -80,27 +88,29 @@ sub _init {
 # Even in the case of an HTML content, reading the whole thing into memory
 # as a big happy string means we can issue regexp queries.
 #
-sub _read_raw_content {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($file) = @_;
+sub _read_raw_content
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($file) = @_;
 
-	local *FILE;
-	open(FILE, $file) || logdie "can't open $file: $!";
-	my $size = -s FILE;
+    local *FILE;
+    open(FILE, $file) || logdie "can't open $file: $!";
+    my $size = -s FILE;
 
-	$self->{raw_content} = ' ' x -s(FILE);	# Pre-extend buffer
+    $this->{raw_content} = ' ' x -s (FILE);    # Pre-extend buffer
 
-	local $_;
-	while (<FILE>) {						# Skip header
-		last if /^\r?$/;
-	}
+    local $_;
+    while (<FILE>)
+    {                                          # Skip header
+        last if /^\r?$/;
+    }
 
-	local $/ = undef;						# Will slurp remaining
-	$self->{raw_content} = <FILE>;
-	close FILE;
+    local $/ = undef;                          # Will slurp remaining
+    $this->{raw_content} = <FILE>;
+    close FILE;
 
-	return DVOID;
+    return DVOID;
 }
 
 1;
@@ -147,9 +157,24 @@ The URI object, identifying the page we requested.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

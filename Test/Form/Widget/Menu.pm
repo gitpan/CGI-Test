@@ -1,35 +1,28 @@
-#
-# $Id: Menu.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Form::Widget::Menu;
+use strict;
+##################################################################
+# $Id: Menu.pm,v 1.2 2003/09/29 11:00:38 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Menu.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Menu;
 
 #
 # This class models a FORM menu (either a popup or a scrollable list).
 #
 
-require CGI::Test::Form::Widget;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget);
+use CGI::Test::Form::Widget;
+use base qw(CGI::Test::Form::Widget);
 
 use Carp::Datum;
 use Log::Agent;
 use Storable qw(dclone);
 
+############################################################
 #
 # ->_parse_options
 #
@@ -45,242 +38,326 @@ use Storable qw(dclone);
 #  selected       hashref, recording selected *values*
 #  selected_count amount of selected items
 #
-sub _parse_options {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($node) = shift;
+############################################################
+sub _parse_options
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($node) = shift;
 
-	DREQUIRE $node->tag eq "select";
-	DREQUIRE $self->name ne "", "_parse_attr was already called";
+    DREQUIRE $node->tag eq "select";
+    DREQUIRE $this->name ne "", "_parse_attr was already called";
 
-	my $labels = $self->{option_labels} = [];
-	my $values = $self->{option_values} = [];
-	my $selected = $self->{selected} = {};
-	my $known = $self->{known_values} = {};
-	my $count = 0;
-	my %seen;
+    my $labels   = $this->{option_labels} = [];
+    my $values   = $this->{option_values} = [];
+    my $selected = $this->{selected}      = {};
+    my $known    = $this->{known_values}  = {};
+    my $count    = 0;
+    my %seen;
 
-	my @nodes = $node->look_down(sub { 1 });
-	shift @nodes;			# first node is the <SELECT> itself
+    my @nodes = $node->look_down(sub {1});
+    shift @nodes;    # first node is the <SELECT> itself
 
-	foreach my $opt (@nodes) {
-		next if $opt->tag eq "optgroup";
-		unless ($opt->tag eq "option") {
-			logwarn "ignoring non-option tag '%s' within SELECT", uc($opt->tag);
-			next;
-		}
+    foreach my $opt (@nodes)
+    {
+        next if $opt->tag() eq "optgroup";
+        unless ($opt->tag() eq "option")
+        {
+            logwarn "ignoring non-option tag '%s' within SELECT",
+              uc($opt->tag());
+            next;
+        }
 
-		#
-		# The option label is normally the content of the <OPTION> tag.
-		# However, if there is a LABEL= within the tag, it should be used
-		# in preference to the option content, says the W3C's norm.
-		#
+        #
+        # The option label is normally the content of the <OPTION> tag.
+        # However, if there is a LABEL= within the tag, it should be used
+        # in preference to the option content, says the W3C's norm.
+        #
 
-		my $label = $opt->attr("label") || $opt->as_text();
-		my $is_selected = $opt->attr("selected");
-		my $value = $opt->attr("value");
+        my $label       = $opt->attr("label") || $opt->as_text();
+        my $is_selected = $opt->attr("selected");
+        my $value       = $opt->attr("value");
 
-		unless (defined $value) {
-			logwarn "ignoring OPTION tag with no value: %s", $opt->starttag;
-			next;
-		}
+        unless (defined $value)
+        {
+            logwarn "ignoring OPTION tag with no value: %s", $opt->starttag();
+            next;
+        }
 
-		#
-		# It is not really an error to have duplicate values, but is it
-		# a good interface style?  The user will be faced with multiple
-		# labels to choose from, some of them being handled in the same way
-		# since they bear the same value...  Tough choice... Let's warn!
-		#
+        #
+        # It is not really an error to have duplicate values, but is it
+        # a good interface style?  The user will be faced with multiple
+        # labels to choose from, some of them being handled in the same way
+        # since they bear the same value...  Tough choice... Let's warn!
+        #
 
-		logwarn "duplicate value '%s' in OPTION for SELECT NAME=\"%s\"",
-			$value, $self->name if $seen{$value}++;
+        logwarn "duplicate value '%s' in OPTION for SELECT NAME=\"%s\"",
+          $value, $this->name
+          if $seen{$value}++;
 
-		push @$labels, $label;
-		push @$values, $value;
-		$known->{$value}++;				# help them spot dups
-		if ($is_selected) {
-			$selected->{$value}++;
-			$count++;
-		}
-	}
+        push @$labels, $label;
+        push @$values, $value;
+        $known->{$value}++;    # help them spot dups
+        if ($is_selected)
+        {
+            $selected->{$value}++;
+            $count++;
+        }
+    }
 
-	#
-	# A popup menu needs to have at least one item selected.  We're the
-	# user agent, and we get to choose which item we'll select implicitely.
-	# Use the first listed value, if any.
-	#
+    #
+    # A popup menu needs to have at least one item selected.  We're the
+    # user agent, and we get to choose which item we'll select implicitely.
+    # Use the first listed value, if any.
+    #
 
-	if ($count == 0 && $self->is_popup && @$values) {
-		my $first = $values->[0];
-		$selected->{$first}++;
-		$count++;
-		logwarn "implicitely selecting OPTION '%s' for SELECT NAME=\"%s\"",
-			$first, $self->name;
-	}
+    if ($count == 0 && $this->is_popup() && @$values)
+    {
+        my $first = $values->[ 0 ];
+        $selected->{$first}++;
+        $count++;
+        logwarn "implicitely selecting OPTION '%s' for SELECT NAME=\"%s\"",
+          $first, $this->name();
+    }
 
-	$self->{selected_count} = $count;
+    $this->{selected_count} = $count;
 
-	DENSURE @{$self->option_labels} == @{$self->option_values};
-	DENSURE scalar keys %{$self->selected} <= $self->selected_count;
-	DENSURE $self->selected_count <= @{$self->option_values};
-	DENSURE $self->selected_count >= 0 &&
-		implies(!$self->multiple, $self->selected_count <= 1);
-	DENSURE implies($self->is_popup && @{$self->option_values},
-		$self->selected_count == 1);
+    DENSURE @{$this->option_labels()} == @{$this->option_values()};
+    DENSURE scalar keys %{$this->selected()} <= $this->selected_count();
+    DENSURE $this->selected_count() <= @{$this->option_values()};
+    DENSURE $this->selected_count() >= 0
+      && implies(!$this->multiple(), $this->selected_count() <= 1);
+    DENSURE implies($this->is_popup() && @{$this->option_values()},
+                    $this->selected_count() == 1);
 
-	return DVOID;
+    return DVOID;
 }
 
+############################################################
 #
 # ->_is_successful		-- defined
 #
 # Is the enabled widget "successful", according to W3C's specs?
 # Any menu with at least one selected item is.
 #
-sub _is_successful {
-	DFEATURE my $f_;
-	my $self = shift;
-	return DVAL $self->selected_count > 0;
+############################################################
+sub _is_successful
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    return DVAL $this->selected_count > 0;
 }
 
+############################################################
 #
 # ->submit_tuples		-- redefined
 #
 # Returns list of (name => value) tuples that should be part of the
 # submitted form data.
 #
-sub submit_tuples {
-	DFEATURE my $f_;
-	my $self = shift;
+############################################################
+sub submit_tuples
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	DREQUIRE $self->is_submitable;
+    DREQUIRE $this->is_submitable();
 
-	my $name = $self->name;
-	my $selected = $self->selected;
+    my $name     = $this->name();
+    my $selected = $this->selected();
 
-	my @tuples = map { $name => $_ } grep { $selected->{$_} }
-		@{$self->option_values};
+    my @tuples =
+      map {$name => $_} grep {$selected->{$_}} @{$this->option_values()};
 
-	return DARY @tuples;
+    return DARY @tuples;
 }
 
 #
 # Attribute access
 #
+############################################################
+sub multiple
+{
+    my $this = shift;
+    return $this->{multiple};
+}    # Set by Menu::List
 
-sub multiple		{ $_[0]->{multiple} }			# Set by Menu::List
-
-sub option_labels	{ $_[0]->{option_labels} }
-sub option_values	{ $_[0]->{option_values} }
-sub known_values	{ $_[0]->{known_values} }
-sub selected		{ $_[0]->{selected} }
-sub selected_count	{ $_[0]->{selected_count} }
-sub old_selected	{ $_[0]->{old_selected} }
+############################################################
+sub option_labels
+{
+    my $this = shift;
+    return $this->{option_labels};
+}
+############################################################
+sub option_values
+{
+    my $this = shift;
+    return $this->{option_values};
+}
+############################################################
+sub known_values
+{
+    my $this = shift;
+    return $this->{known_values};
+}
+############################################################
+sub selected
+{
+    my $this = shift;
+    return $this->{selected};
+}
+############################################################
+sub selected_count
+{
+    my $this = shift;
+    return $this->{selected_count};
+}
+############################################################
+sub old_selected
+{
+    my $this = shift;
+    return $this->{old_selected};
+}
 
 #
 # Selection shortcuts
 #
 
-sub select			{ $_[0]->set_selected($_[1], 1) }
-sub unselect		{ $_[0]->set_selected($_[1], 0) }
+############################################################
+sub select
+{
+    my $this = shift;
+    my $item = shift;
+    $this->set_selected($item, 1);
+}
+############################################################
+sub unselect
+{
+    my $this = shift;
+    my $item = shift;
+    $this->set_selected($item, 0);
+}
 
 #
 # Global widget predicates
 #
 
-sub is_read_only	{ 1 }
+############################################################
+sub is_read_only
+{
+    return 1;
+}
 
 #
 # High-level classification predicates
 #
 
-sub is_menu		{ 1 }
+############################################################
+sub is_menu
+{
+    return 1;
+}
 
 #
 # Predicates for menus
 #
 
-sub is_popup	{ logconfess "deferred" }
+############################################################
+sub is_popup
+{
+    logconfess "deferred";
+}
 
+############################################################
 #
 # ->is_selected
 #
 # Checks whether given value is selected.
 #
-sub is_selected {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($value) = @_;
+############################################################
+sub is_selected
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($value) = @_;
 
-	unless ($self->known_values->{$value}) {
-		logcarp "unknown value \"%s\" in $self", $value;
-		return DVAL 0;
-	}
+    unless ($this->known_values->{$value})
+    {
+        logcarp "unknown value \"%s\" in $this", $value;
+        return DVAL 0;
+    }
 
-	return DVAL exists $self->selected->{$value};
+    return DVAL exists $this->selected->{$value};
 }
 
+############################################################
 #
 # ->set_selected
 #
 # Change "selected" status for a menu value.
 #
-sub set_selected {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($value, $state) = @_;
+############################################################
+sub set_selected
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($value, $state) = @_;
 
-	unless ($self->known_values->{$value}) {
-		logcarp "unknown value \"%s\" in $self", $value;
-		return DVOID;
-	}
+    unless ($this->known_values->{$value})
+    {
+        logcarp "unknown value \"%s\" in $this", $value;
+        return DVOID;
+    }
 
-	my $is_selected = $self->is_selected($value);
-	return DVOID if equiv($is_selected, $state);		# No change
+    my $is_selected = $this->is_selected($value);
+    return DVOID if equiv($is_selected, $state);    # No change
 
-	#
-	# Save selected status for all the values the first time a change is made.
-	#
+    #
+    # Save selected status for all the values the first time a change is made.
+    #
 
-	$self->{old_selected} = dclone $self->{selected}
-		unless exists $self->{old_selected};
+    $this->{old_selected} = dclone $this->{selected}
+      unless exists $this->{old_selected};
 
-	#
-	# If multiple selection is not authorized, clear the selection list.
-	#
+    #
+    # If multiple selection is not authorized, clear the selection list.
+    #
 
-	my $selected = $self->selected;
-	%$selected = () unless $self->multiple;
+    my $selected = $this->selected();
+    %$selected = () unless $this->multiple();
 
-	$selected->{$value} = 1 if $state;
-	delete $selected->{$value} unless $state;
-	$self->{selected_count} = scalar keys %$selected;
+    $selected->{$value} = 1 if $state;
+    delete $selected->{$value} unless $state;
+    $this->{selected_count} = scalar keys %$selected;
 
-	DENSURE equiv($state, $self->selected->{$value});
-	DENSURE $self->selected_count >= 0 &&
-		implies(!$self->multiple, $self->selected_count <= 1);
+    DENSURE equiv($state, $this->selected->{$value});
+    DENSURE $this->selected_count() >= 0
+      && implies(!$this->multiple(), $this->selected_count() <= 1);
 
-	return DVOID;
+    return DVOID;
 }
 
+############################################################
 #
 # ->reset_state
 #
 # Called when a "Reset" button is pressed to restore the value the widget
 # had upon form entry.
 #
-sub reset_state {
-	DFEATURE my $f_;
-	my $self = shift;
+############################################################
+sub reset_state
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	return DVOID unless exists $self->{old_selected};
-	$self->{selected} = delete $self->{old_selected};
-	$self->{selected_count} = scalar keys %{$self->selected};
+    return DVOID unless exists $this->{old_selected};
+    $this->{selected}       = delete $this->{old_selected};
+    $this->{selected_count} = scalar keys %{$this->selected()};
 
-	DENSURE $self->selected_count >= 0 &&
-		implies(!$self->multiple, $self->selected_count <= 1);
+    DENSURE $this->selected_count() >= 0
+      && implies(!$this->multiple(), $this->selected_count() <= 1);
 
-	return DVOID;
+    return DVOID;
 }
 
 1;
@@ -403,9 +480,24 @@ of calling this feature.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

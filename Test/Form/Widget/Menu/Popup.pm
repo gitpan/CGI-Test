@@ -1,30 +1,22 @@
-#
-# $Id: Popup.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Form::Widget::Menu::Popup;
+use strict;
+##################################################################
+# $Id: Popup.pm,v 1.2 2003/09/29 11:00:47 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Popup.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Menu::Popup;
 
 #
 # This class models a FORM popup menu.
 #
 
-require CGI::Test::Form::Widget::Menu;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget::Menu);
+use CGI::Test::Form::Widget::Menu;
+use base qw(CGI::Test::Form::Widget::Menu);
 
 use Carp::Datum;
 use Log::Agent;
@@ -36,10 +28,8 @@ use Log::Agent;
 # to translate that into class attributes.
 #
 
-my %attr = (
-	'name'		=> 'name',
-	'disabled'	=> 'is_disabled',
-);
+my %attr = ('name'     => 'name',
+            'disabled' => 'is_disabled',);
 
 #
 # ->_init
@@ -47,13 +37,14 @@ my %attr = (
 # Per-widget initialization routine.
 # Parse HTML node to determine our specific parameters.
 #
-sub _init {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($node) = shift;
-	$self->_parse_attr($node, \%attr);
-	$self->_parse_options($node);
-	return DVOID;
+sub _init
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($node) = shift;
+    $this->_parse_attr($node, \%attr);
+    $this->_parse_options($node);
+    return DVOID;
 }
 
 #
@@ -62,30 +53,38 @@ sub _init {
 # Change "selected" status for a menu value.
 # We can only "select" values from a popup, never unselect one.
 #
-sub set_selected {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($value, $state) = @_;
+sub set_selected
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($value, $state) = @_;
 
-	unless ($state) {
-		logcarp "cannot unselect value \"%s\" from popup $self", $value;
-		return DVOID;
-	}
+    unless ($state)
+    {
+        logcarp "cannot unselect value \"%s\" from popup $this", $value;
+        return DVOID;
+    }
 
-	return $self->SUPER::set_selected($value, $state);
+    return $this->SUPER::set_selected($value, $state);
 }
 
 #
 # Attribute access
 #
 
-sub gui_type	{ "popup menu" }
+sub gui_type
+{
+    return "popup menu";
+}
 
 #
 # Defined predicates
 #
 
-sub is_popup	{ 1 }
+sub is_popup
+{
+    return 1;
+}
 
 1;
 
@@ -115,9 +114,24 @@ first item in the popup (if not empty) and warns you via C<logwarn>.
 The interface is the same as the one described in
 L<CGI::Test::Form::Widget::Menu>.
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

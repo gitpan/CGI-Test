@@ -1,181 +1,248 @@
-#
-# $Id: Box.pm,v 0.1 2001/03/31 10:54:01 ram Exp $
-#
+package CGI::Test::Form::Widget::Box;
+use strict;
+##################################################################
+# $Id: Box.pm,v 1.2 2003/09/29 11:00:38 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Box.pm,v $
-# Revision 0.1  2001/03/31 10:54:01  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Box;
 
 #
 # This class models a FORM box, either a radio button or a checkbox.
 #
 
-require CGI::Test::Form::Widget;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget);
+use CGI::Test::Form::Widget;
+use base qw(CGI::Test::Form::Widget);
 
 use Carp::Datum;
 use Log::Agent;
 
+############################################################
 #
 # %attr
 #
 # Defines which HTML attributes we should look at within the node, and how
 # to translate that into class attributes.
 #
+############################################################
 
-my %attr = (
-	'name'		=> 'name',
-	'value'		=> 'value',
-	'checked'	=> 'is_checked',
-	'disabled'	=> 'is_disabled',
-);
+my %attr = ('name'     => 'name',
+            'value'    => 'value',
+            'checked'  => 'is_checked',
+            'disabled' => 'is_disabled',
+            );
 
+############################################################
 #
 # ->_init
 #
 # Per-widget initialization routine.
 # Parse HTML node to determine our specific parameters.
 #
-sub _init {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($node) = shift;
-	$self->_parse_attr($node, \%attr);
-	return DVOID;
+############################################################
+sub _init
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($node) = shift;
+    $this->_parse_attr($node, \%attr);
+    return DVOID;
 }
 
+############################################################
 #
 # ->_is_successful		-- defined
 #
 # Is the enabled widget "successful", according to W3C's specs?
 # Any ticked checkbox and radio button is.
 #
-sub _is_successful {
-	DFEATURE my $f_;
-	my $self = shift;
-	return DVAL $self->is_checked;
+############################################################
+sub _is_successful
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    return DVAL $this->is_checked();
 }
 
+############################################################
 #
 # ->group_list
 #
 # Returns list of widgets belonging to the same group as we do.
 #
-sub group_list {
-	DFEATURE my $f_;
-	my $self = shift;
+############################################################
+sub group_list
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	DREQUIRE defined $self->group, "widget has been classified in a group";
+    DREQUIRE defined $this->group, "widget has been classified in a group";
 
-	return DARY $self->group->widgets_in($self->name);
+    return DARY $this->group->widgets_in($this->name);
 }
 
 #
 # Local attribute access
 #
 
-sub group			{ $_[0]->{group} }
-sub is_checked		{ $_[0]->{is_checked} }
-sub old_is_checked	{ $_[0]->{old_is_checked} }
+############################################################
+sub group
+{
+    my $this = shift;
+    return $this->{group};
+}
+############################################################
+sub is_checked
+{
+    my $this = shift;
+    return $this->{is_checked};
+}
+############################################################
+sub old_is_checked
+{
+    my $this = shift;
+    $this->{old_is_checked};
+}
 
 #
 # Checking shortcuts
 #
 
-sub check			{ $_[0]->set_is_checked(1) }
-sub uncheck			{ $_[0]->set_is_checked(0) }
-
-sub check_tagged	{ $_[0]->_mark_by_tag($_[1], 1) }
-sub uncheck_tagged	{ $_[0]->_mark_by_tag($_[1], 0) }
+############################################################
+sub check
+{
+    my $this = shift;
+    $this->set_is_checked(1);
+}
+############################################################
+sub uncheck
+{
+    my $this = shift;
+    $this->set_is_checked(0);
+}
+############################################################
+sub check_tagged
+{
+    my $this = shift;
+    my $tag  = shift;
+    $this->_mark_by_tag($tag, 1);
+}
+############################################################
+sub uncheck_tagged
+{
+    my $this = shift;
+    my $tag  = shift;
+    $this->_mark_by_tag($tag, 0);
+}
 
 #
 # Attribute setting
 #
 
-sub set_group		{ $_[0]->{group} = $_[1] }
+############################################################
+sub set_group
+{
+    my $this  = shift;
+    my $group = shift;
+    $this->{group} = $group;
+}
 
+############################################################
 #
 # ->set_is_checked
 #
 # Select or unselect box.
 #
-sub set_is_checked {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($checked) = @_;
+############################################################
+sub set_is_checked
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($checked) = @_;
 
-	return DVOID if !$checked == !$self->is_checked;	# No change
+    return DVOID if !$checked == !$this->is_checked();    # No change
 
-	#
-	# To ease redefinition, let this call _frozen_set_is_checked, which is
-	# not redefinable and performs the common operation.
-	#
+    #
+    # To ease redefinition, let this call _frozen_set_is_checked, which is
+    # not redefinable and performs the common operation.
+    #
 
-	$self->_frozen_set_is_checked($checked);
-	return DVOID;
+    $this->_frozen_set_is_checked($checked);
+    return DVOID;
 }
 
+############################################################
 #
 # ->reset_state			-- redefined
 #
 # Called when a "Reset" button is pressed to restore the value the widget
 # had upon form entry.
 #
-sub reset_state {
-	DFEATURE my $f_;
-	my $self = shift;
-	
-	$self->{is_checked} = delete $self->{old_is_checked}
-		if exists $self->{old_is_checked};
+############################################################
+sub reset_state
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	return DVOID;
+    $this->{is_checked} = delete $this->{old_is_checked}
+      if exists $this->{old_is_checked};
+
+    return DVOID;
 }
 
 #
 # Global widget predicates
 #
 
-sub is_read_only	{ 1 }
+############################################################
+sub is_read_only
+{
+    return 1;
+}
 
 #
 # High-level classification predicates
 #
 
-sub is_box		{ 1 }
+############################################################
+sub is_box
+{
+    return 1;
+}
 
 #
 # Predicates for the Box hierarchy
 #
 
-sub is_radio		{ logconfess "deferred" }
-sub is_standalone	{ 1 == $_[0]->group->widget_count($_[0]->name) }
+############################################################
+sub is_radio
+{
+    logconfess "deferred";
+}
+############################################################
+sub is_standalone
+{
+    my $this = shift;
+    1 == $this->group->widget_count($this->name());
+}
 
 #
 # ->delete
 #
 # Break circular refs.
 #
-sub delete {
-	DFEATURE my $f_;
-	my $self = shift;
+sub delete
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	delete $self->{group};
-	$self->SUPER::delete;
+    delete $this->{group};
+    $this->SUPER::delete;
 
-	return DVOID;
+    return DVOID;
 }
 
 #
@@ -183,46 +250,54 @@ sub delete {
 #
 # Frozen implementation of set_is_checked().
 #
-sub _frozen_set_is_checked {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($checked) = @_;
+sub _frozen_set_is_checked
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($checked) = @_;
 
-	#
-	# The first time we do this, save current status in `old_is_checked'.
-	#
+    #
+    # The first time we do this, save current status in `old_is_checked'.
+    #
 
-	$self->{old_is_checked} = $self->{is_checked}
-		unless exists $self->{old_is_checked};
-	$self->{is_checked} = $checked;
+    $this->{old_is_checked} = $this->{is_checked}
+      unless exists $this->{old_is_checked};
+    $this->{is_checked} = $checked;
 
-	return DVOID;
+    return DVOID;
 }
 
+############################################################
 #
 # ->_mark_by_tag
 #
 # Lookup the box in the group whose name is the given tag, and mark it
 # as specified.
 #
-sub _mark_by_tag {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($tag, $checked) = @_;
+############################################################
+sub _mark_by_tag
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($tag, $checked) = @_;
 
-	my @boxes = grep { $_->value eq $tag } $self->group_list;
+    my @boxes = grep {$_->value eq $tag} $this->group_list();
 
-	if (@boxes == 0) {
-		logcarp "no %s within the group '%s' bears the tag \"$tag\"",
-			$self->gui_type, $self->name;
-	} else {
-		logcarp "found %d %ss within the group '%s' bearing the tag \"$tag\"",
-			scalar(@boxes), $self->gui_type, $self->name if @boxes > 1;
+    if (@boxes == 0)
+    {
+        logcarp "no %s within the group '%s' bears the tag \"$tag\"",
+          $this->gui_type(), $this->name();
+    }
+    else
+    {
+        logcarp "found %d %ss within the group '%s' bearing the tag \"$tag\"",
+          scalar(@boxes), $this->gui_type(), $this->name()
+          if @boxes > 1;
 
-		$boxes[0]->set_is_checked($checked);
-	}
+        $boxes[ 0 ]->set_is_checked($checked);
+    }
 
-	return DVOID;
+    return DVOID;
 }
 
 1;
@@ -340,9 +415,24 @@ of calling this feature.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

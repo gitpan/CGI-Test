@@ -1,31 +1,14 @@
-#
-# $Id: Test.pm,v 0.1.1.3 2001/04/17 11:24:50 ram Exp $
-#
+package CGI::Test;
+use strict;
+################################################################
+# $Id: Test.pm,v 1.3 2003/10/04 14:22:41 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+#################################################################
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Test.pm,v $
-# Revision 0.1.1.3  2001/04/17 11:24:50  ram
-# patch3: updated version number
-#
-# Revision 0.1.1.2  2001/04/17 10:41:33  ram
-# patch2: discard parameters when figuring out content-type
-#
-# Revision 0.1.1.1  2001/04/14 08:50:13  ram
-# patch1: set PERL5LIB in child to mirror parent's @INC
-#
-# Revision 0.1  2001/03/31 10:54:01  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test;
 
 use Carp::Datum;
 use Getargs::Long;
@@ -39,12 +22,13 @@ use File::Basename;
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT);
 
-$VERSION = '0.103';
-@ISA = qw(Exporter);
-@EXPORT = qw(ok);
+$VERSION = '0.104';
+@ISA     = qw(Exporter);
+@EXPORT  = qw(ok);
 
+#############################################################################
 #
-# ->make
+# ->new
 #
 # Creation routine
 #
@@ -55,79 +39,131 @@ $VERSION = '0.103';
 #    cgi_env		(optional) default CGI environment
 #    doc_dir		(optional) physical location of docs, for path translation
 #
-sub make {
-	DFEATURE my $f_;
-	my $self = bless {}, shift;
-	my ($ubase, $dir, $doc, $tmp, $env) = xgetargs(@_,
-		-base_url		=> 's',
-		-cgi_dir		=> 's',
-		-doc_dir		=> ['s', "/var/www"],
-		-tmp_dir		=> ['s', $ENV{TMPDIR} || "/tmp"],
-		-cgi_env		=> ['HASH'],
-	);
+#############################################################################
+sub new
+{
+    DFEATURE my $f_;
+    my $this = bless {}, shift;
+    my ($ubase, $dir, $doc, $tmp, $env) =
+      xgetargs(@_,
+               -base_url => 's',
+               -cgi_dir  => 's',
+               -doc_dir  => [ 's', "/var/www" ],
+               -tmp_dir  => [ 's', $ENV{TMPDIR} || "/tmp" ],
+               -cgi_env  => [ 'HASH' ],
+               );
 
-	my $uri = URI->new($ubase);
-	VERIFY $uri->scheme eq 'http', "-base_url $ubase within the http scheme";
+    my $uri = URI->new($ubase);
+    VERIFY $uri->scheme eq 'http', "-base_url $ubase within the http scheme";
 
-	my ($server, $path) = $self->split_uri($uri);
-	$self->{host_port} = $server;
-	$self->{base_path} = $path;
-	$self->{cgi_dir} = $dir;
-	$self->{tmp_dir} = $tmp;
-	$env = {} unless defined $env;
-	$self->{cgi_env} = $env;
-	$self->{doc_dir} = $doc;
+    my ($server, $path) = $this->split_uri($uri);
+    $this->{host_port} = $server;
+    $this->{base_path} = $path;
+    $this->{cgi_dir}   = $dir;
+    $this->{tmp_dir}   = $tmp;
+    $env = {} unless defined $env;
+    $this->{cgi_env} = $env;
+    $this->{doc_dir} = $doc;
 
-	#
-	# The following default settings will apply unless alternatives given
-	# by user via the -cgi_env parameter.
-	#
+    #
+    # The following default settings will apply unless alternatives given
+    # by user via the -cgi_env parameter.
+    #
 
-	my %dflt = (
-		AUTH_TYPE				=> "Basic",
-		GATEWAY_INTERFACE		=> "CGI/1.1",
-		HTTP_ACCEPT				=> "*/*",
-		HTTP_CONNECTION			=> "Close",
-		HTTP_USER_AGENT			=> "CGI::Test",
-		HTTP_ACCEPT_CHARSET		=> "iso-8859-1",
-		REMOTE_HOST				=> "localhost",
-		REMOTE_ADDR				=> "127.0.0.1",
-		SERVER_NAME				=> $uri->host,
-		SERVER_PORT				=> $uri->port,
-		SERVER_PROTOCOL			=> "HTTP/1.1",
-		SERVER_SOFTWARE			=> "CGI::Test",
-	);
+    my %dflt = (AUTH_TYPE           => "Basic",
+                GATEWAY_INTERFACE   => "CGI/1.1",
+                HTTP_ACCEPT         => "*/*",
+                HTTP_CONNECTION     => "Close",
+                HTTP_USER_AGENT     => "CGI::Test",
+                HTTP_ACCEPT_CHARSET => "iso-8859-1",
+                REMOTE_HOST         => "localhost",
+                REMOTE_ADDR         => "127.0.0.1",
+                SERVER_NAME         => $uri->host,
+                SERVER_PORT         => $uri->port,
+                SERVER_PROTOCOL     => "HTTP/1.1",
+                SERVER_SOFTWARE     => "CGI::Test",
+                );
 
-	while (my ($key, $value) = each %dflt) {
-		$env->{$key} = $value unless exists $env->{$key};
-	}
+    while (my ($key, $value) = each %dflt)
+    {
+        $env->{$key} = $value unless exists $env->{$key};
+    }
 
-	#
-	# Object types to create depending on returned content-type.
-	# If not listed here, "Other" is assummed.
-	#
+    #
+    # Object types to create depending on returned content-type.
+    # If not listed here, "Other" is assummed.
+    #
 
-	$self->{_obj_type} = {
-		'text/plain'		=> 'Text',
-		'text/html'			=> 'HTML',
-	};
+    $this->{_obj_type} = {'text/plain' => 'Text',
+                          'text/html'  => 'HTML',
+                          };
 
-	return DVAL $self;
+    return DVAL $this;
+}
+
+######################################################################
+#
+######################################################################
+sub make
+{    #
+    my $class = shift;
+    return $class->new(@_);
 }
 
 #
 # Attribute access
 #
 
-sub host_port	{ $_[0]->{host_port} }
-sub base_path	{ $_[0]->{base_path} }
-sub cgi_dir		{ $_[0]->{cgi_dir} }
-sub doc_dir		{ $_[0]->{doc_dir} }
-sub tmp_dir		{ $_[0]->{tmp_dir} }
-sub cgi_env		{ $_[0]->{cgi_env} }
+######################################################################
+sub host_port
+{
+    my $this = shift;
+    return $this->{host_port};
+}
 
-sub _obj_type	{ $_[0]->{_obj_type} }
+######################################################################
+sub base_path
+{
+    my $this = shift;
+    return $this->{base_path};
+}
 
+######################################################################
+sub cgi_dir
+{
+    my $this = shift;
+    return $this->{cgi_dir};
+}
+
+######################################################################
+sub doc_dir
+{
+    my $this = shift;
+    return $this->{doc_dir};
+}
+
+######################################################################
+sub tmp_dir
+{
+    my $this = shift;
+    return $this->{tmp_dir};
+}
+
+######################################################################
+sub cgi_env
+{
+    my $this = shift;
+    return $this->{cgi_env};
+}
+
+######################################################################
+sub _obj_type
+{
+    my $this = shift;
+    return $this->{_obj_type};
+}
+
+######################################################################
 #
 # ->_dpath
 #
@@ -136,37 +172,47 @@ sub _obj_type	{ $_[0]->{_obj_type} }
 #
 # Will probably only work on Unix (possibly Win32 if paths given with "/").
 #
-sub _dpath {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($dir) = @_;
-	my $root = ($dir =~ s|^/||) ? "/" : "";
-	my @cur;
-	foreach my $item (split(m|/|, $dir)) {
-		next if $item eq '.';
-		if ($item eq '..') {
-			pop(@cur);
-		} else {
-			push(@cur, $item);
-		}
-	}
-	my $path = $root . join('/', @cur);
-	$path =~ tr|/||s;
-	return DVAL $path;
+######################################################################
+sub _dpath
+{
+    DFEATURE my $f_;
+    my $this  = shift;
+    my ($dir) = @_;
+    my $root  = ($dir =~ s|^/||) ? "/" : "";
+    my @cur;
+    foreach my $item (split(m|/|, $dir))
+    {
+        next if $item eq '.';
+        if ($item eq '..')
+        {
+            pop(@cur);
+        }
+        else
+        {
+            push(@cur, $item);
+        }
+    }
+    my $path = $root . join('/', @cur);
+    $path =~ tr|/||s;
+    return DVAL $path;
 }
 
+######################################################################
 #
 # ->split_uri
 #
 # Split down URI into (server, path, query) components.
 #
-sub split_uri {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($uri) = @_;
-	return DARY ($uri->host_port, $self->_dpath($uri->path), $uri->query);
+######################################################################
+sub split_uri
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($uri) = @_;
+    return DARY($uri->host_port, $this->_dpath($uri->path), $uri->query);
 }
 
+######################################################################
 #
 # ->GET
 #
@@ -177,14 +223,17 @@ sub split_uri {
 # Optional $user provides the name of the "authenticated" user running
 # this script.
 #
-sub GET {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($uri, $user) = @_;
+######################################################################
+sub GET
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($uri, $user) = @_;
 
-	return DVAL $self->_cgi_request($uri, $user, undef);
+    return DVAL $this->_cgi_request($uri, $user, undef);
 }
 
+######################################################################
 #
 # ->POST
 #
@@ -197,187 +246,202 @@ sub GET {
 # Optional $user provides the name of the "authenticated" user running
 # this script.
 #
-sub POST {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($uri, $input, $user) = @_;
+######################################################################
+sub POST
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($uri, $input, $user) = @_;
 
-	DREQUIRE ref $input && $input->isa("CGI::Test::Input");
+    DREQUIRE ref $input && $input->isa("CGI::Test::Input");
 
-	return DVAL $self->_cgi_request($uri, $user, $input);
+    return DVAL $this->_cgi_request($uri, $user, $input);
 }
 
+######################################################################
 #
 # ->_cgi_request
 #
 # Common routine to handle GET and POST.
 #
-sub _cgi_request {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($uri, $user, $input) = @_;		# $input defined for POST
+######################################################################
+sub _cgi_request
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($uri, $user, $input) = @_;    # $input defined for POST
 
-	my $u = URI->new($uri);
-	VERIFY $u->scheme eq "http", "URI $uri is within the http scheme";
+    my $u = URI->new($uri);
+    VERIFY $u->scheme eq "http", "URI $uri is within the http scheme";
 
-	require CGI::Test::Page::Error;
-	my $error = "CGI::Test::Page::Error";
+    require CGI::Test::Page::Error;
+    my $error = "CGI::Test::Page::Error";
 
-	my ($userver, $upath, $uquery) = $self->split_uri($u);
-	my $server = $self->host_port;
-	my $base_path = $self->base_path . "/";
+    my ($userver, $upath, $uquery) = $this->split_uri($u);
+    my $server    = $this->host_port;
+    my $base_path = $this->base_path . "/";
 
-	VERIFY $userver eq $server, "URI $uri located on server $server";
-	VERIFY substr($upath, 0, length $base_path) eq $base_path,
-		"URI $uri located under the $base_path directory";
+    VERIFY $userver eq $server, "URI $uri located on server $server";
+    VERIFY substr($upath, 0, length $base_path) eq $base_path,
+      "URI $uri located under the $base_path directory";
 
-	substr($upath, 0, length $base_path) = '';
+    substr($upath, 0, length $base_path) = '';
 
-	logdbg 'info', "uri $uri -> script+path $upath";
+    logdbg 'info', "uri $uri -> script+path $upath";
 
-	#
-	# We have script + path_info in the $upath variable.  To determine where
-	# the path_info starts, we have to walk through the components and
-	# compare, at each step, the current walk-through path with one on the
-	# filesystem under cgi_dir.
-	#
+    #
+    # We have script + path_info in the $upath variable.  To determine where
+    # the path_info starts, we have to walk through the components and
+    # compare, at each step, the current walk-through path with one on the
+    # filesystem under cgi_dir.
+    #
 
-	my $cgi_dir = $self->cgi_dir;
-	my @components = split(m|/|, $upath);
-	my @script;
+    my $cgi_dir = $this->cgi_dir;
+    my @components = split(m|/|, $upath);
+    my @script;
 
-	while (@components) {
-		my $item = shift @components;
-		if (-e File::Spec->catfile($cgi_dir, @script, $item)) {
-			push(@script, $item);
-		} else {
-			unshift @components, $item;
-			last;
-		}
-	}
+    while (@components)
+    {
+        my $item = shift @components;
+        if (-e File::Spec->catfile($cgi_dir, @script, $item))
+        {
+            push(@script, $item);
+        }
+        else
+        {
+            unshift @components, $item;
+            last;
+        }
+    }
 
-	my $script = File::Spec->catfile($cgi_dir, @script);	# Real
-	my $script_name = $base_path . join("/", @script);		# Virtual
-	my $path = "/" . join("/", @components);				# Virtual
+    my $script      = File::Spec->catfile($cgi_dir, @script);        # Real
+    my $script_name = $base_path . join("/",        @script);        # Virtual
+    my $path        = "/" . join("/",               @components);    # Virtual
 
-	logdbg 'info', "script=$script, path=$path";
+    logdbg 'info', "script=$script, path=$path";
 
-	return DVAL $error->make(RC_NOT_FOUND, $self) unless -f $script;
-	return DVAL $error->make(RC_UNAUTHORIZED, $self) unless -x $script;
+    return DVAL $error->new(RC_NOT_FOUND,    $this) unless -f $script;
+    return DVAL $error->new(RC_UNAUTHORIZED, $this) unless -x $script;
 
-	#
-	# Prepare input for POST requests.
-	#
+    #
+    # Prepare input for POST requests.
+    #
 
-	my @post = ();
-	local $SIG{PIPE} = 'IGNORE';
-	local (*PREAD, *PWRITE);
-	if (defined $input) {
-		unless (pipe(PREAD, PWRITE)) {
-			logerr "can't open pipe: $!";
-			return DVAL $error->make(RC_INTERNAL_SERVER_ERROR, $self);
-		}
-		@post = (
-			-in			=> \*PREAD,
-			-input		=> $input,
-		);
-	}
+    my @post = ();
+    local $SIG{PIPE} = 'IGNORE';
+    local (*PREAD, *PWRITE);
+    if (defined $input)
+    {
+        unless (pipe(PREAD, PWRITE))
+        {
+            logerr "can't open pipe: $!";
+            return DVAL $error->new(RC_INTERNAL_SERVER_ERROR, $this);
+        }
 
-	#
-	# Prepare temporary file for storing output, which we'll parse once
-	# the script is done.
-	#
+        @post = (-in    => \*PREAD,
+                 -input => $input,);
+    }
 
-	my ($fh, $fname) = mkstemp(
-		File::Spec->catfile($self->tmp_dir, "cgi_out.XXXXXX"));
+    #
+    # Prepare temporary file for storing output, which we'll parse once
+    # the script is done.
+    #
 
-	select((select(STDOUT), $| = 1)[0]);
-	print STDOUT "";						# Flush STDOUT before forking
+    my ($fh, $fname) =
+      mkstemp(File::Spec->catfile($this->tmp_dir, "cgi_out.XXXXXX"));
 
-	#
-	# Fork...
-	#
+    select((select(STDOUT), $| = 1)[ 0 ]);
+    print STDOUT "";    # Flush STDOUT before forking
 
-	my $pid = fork;
-	logdie "can't fork: $!" unless defined $pid;
+    #
+    # Fork...
+    #
 
-	#
-	# Child will run the CGI program with no input if it's a GET and
-	# output stored to $fh.  When issuing a POST, data will be provided
-	# by the parent through a pipe.
-	#
+    my $pid = fork;
+    logdie "can't fork: $!" unless defined $pid;
 
-	if ($pid == 0) {
-		close PWRITE if defined $input;			# Writing side of the pipe
-		$self->_run_cgi(
-			-script_file	=> $script,			# Real path
-			-script_name	=> $script_name,	# Virtual path, given in URI
-			-user			=> $user,
-			-out			=> $fh,
-			-uri			=> $u,
-			-path_info		=> $path,
-			@post,								# Additional params for POST
-		);
-		logconfess "not reachable!";
-	}
+    #
+    # Child will run the CGI program with no input if it's a GET and
+    # output stored to $fh.  When issuing a POST, data will be provided
+    # by the parent through a pipe.
+    #
 
-	#
-	# Parent process
-	#
+    if ($pid == 0)
+    {
+        close PWRITE if defined $input;    # Writing side of the pipe
+        $this->_run_cgi(
+            -script_file => $script,         # Real path
+            -script_name => $script_name,    # Virtual path, given in URI
+            -user        => $user,
+            -out         => $fh,
+            -uri         => $u,
+            -path_info   => $path,
+            @post,                           # Additional params for POST
+            );
+        logconfess "not reachable!";
+    }
 
-	close $fh;
-	if (defined $input) {						# Send POST input data
-		close PREAD;
-		syswrite PWRITE, $input->data, $input->length;
-		close PWRITE or logwarn "failure while closing pipe: $!";
-	}
+    #
+    # Parent process
+    #
 
-	my $child = waitpid $pid, 0;
+    close $fh;
+    if (defined $input)
+    {                                        # Send POST input data
+        close PREAD;
+        syswrite PWRITE, $input->data, $input->length;
+        close PWRITE or logwarn "failure while closing pipe: $!";
+    }
 
-	if ($pid != $child) {
-		logerr "waitpid returned with pid=$child, but expected pid=$pid";
-		kill 'TERM', $pid or logwarn "can't SIGTERM pid $pid: $!";
-		unlink $fname or logwarn "can't unlink $fname: $!";
-		return DVAL $error->make(RC_NO_CONTENT, $self);
-	}
+    my $child = waitpid $pid, 0;
 
-	#
-	# Get header within generated response, and determine Content-Type.
-	#
+    if ($pid != $child)
+    {
+        logerr "waitpid returned with pid=$child, but expected pid=$pid";
+        kill 'TERM', $pid or logwarn "can't SIGTERM pid $pid: $!";
+        unlink $fname or logwarn "can't unlink $fname: $!";
+        return DVAL $error->new(RC_NO_CONTENT, $this);
+    }
 
-	my $header = $self->_parse_header($fname);
-	unless (scalar keys %$header) {
-		logerr "script $script_name generated no valid headers";
-		unlink $fname or logwarn "can't unlink $fname: $!";
-		return DVAL $error->make(RC_INTERNAL_SERVER_ERROR, $self);
-	}
+    #
+    # Get header within generated response, and determine Content-Type.
+    #
 
-	#
-	# Create proper page object, which will parse the results file as needed.
-	#
+    my $header = $this->_parse_header($fname);
+    unless (scalar keys %$header)
+    {
+        logerr "script $script_name generated no valid headers";
+        unlink $fname or logwarn "can't unlink $fname: $!";
+        return DVAL $error->new(RC_INTERNAL_SERVER_ERROR, $this);
+    }
 
-	my $type = $header->{'Content-Type'};
-	my $base_type = lc($type);
-	$base_type =~ s/;.*//;			# Strip type parameters
-	my $objtype = $self->_obj_type->{$base_type} || "Other";
-	$objtype = "CGI::Test::Page::$objtype";
+    #
+    # Create proper page object, which will parse the results file as needed.
+    #
 
-	eval "require $objtype";
-	logdie "can't load module $objtype: $@" if chop $@;
+    my $type      = $header->{'Content-Type'};
+    my $base_type = lc($type);
+    $base_type =~ s/;.*//;    # Strip type parameters
+    my $objtype = $this->_obj_type->{$base_type} || "Other";
+    $objtype = "CGI::Test::Page::$objtype";
 
-	my $page = $objtype->make(
-		-server			=> $self,
-		-file			=> $fname,
-		-content_type	=> $type,		# raw type, with parameters
-		-user			=> $user,
-		-uri			=> $u,
-	);
+    eval "require $objtype";
+    logdie "can't load module $objtype: $@" if chop $@;
 
-	unlink $fname or logwarn "can't unlink $fname: $!";
+    my $page = $objtype->new(
+                        -server       => $this,
+                        -file         => $fname,
+                        -content_type => $type,    # raw type, with parameters
+                        -user         => $user,
+                        -uri          => $u,
+                        );
 
-	return $page;
+    unlink $fname or logwarn "can't unlink $fname: $!";
+
+    return $page;
 }
 
+######################################################################
 #
 # ->_run_cgi
 #
@@ -391,117 +455,139 @@ sub _cgi_request {
 #
 # Returns nothing.
 #
-sub _run_cgi {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($script, $name, $user, $in, $out, $u, $path, $input) = cxgetargs(@_,
-		-script_file		=> 's',
-		-script_name		=> 's',
-		-user				=> [undef],
-		-in					=> [undef],
-		-out				=> undef,
-		-uri				=> 'URI',
-		-path_info			=> 's',
-		-input				=> ['CGI::Test::Input'],
-	);
+######################################################################
+sub _run_cgi
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($script, $name, $user, $in, $out, $u, $path, $input) =
+      cxgetargs(@_,
+                -script_file => 's',
+                -script_name => 's',
+                -user        => [ undef ],
+                -in          => [ undef ],
+                -out         => undef,
+                -uri         => 'URI',
+                -path_info   => 's',
+                -input       => [ 'CGI::Test::Input' ],
+                );
 
-	DREQUIRE defined fileno($out), "valid output filehandle";
-	DREQUIRE !defined $in || defined fileno($in),
-		"valid input filehandle or undef";
-	DREQUIRE -x $script, "script $script can be executed";
-	DREQUIRE equiv(defined $in, defined $input),
-		"either both -in and -input supplied or none at all";
+    DREQUIRE defined fileno($out), "valid output filehandle";
+    DREQUIRE !defined $in || defined fileno($in),
+      "valid input filehandle or undef";
+    DREQUIRE -x $script, "script $script can be executed";
+    DREQUIRE equiv(defined $in, defined $input),
+      "either both -in and -input supplied or none at all";
 
-	#
-	# Connect file descriptors.
-	#
+    #
+    # Connect file descriptors.
+    #
 
-	if (defined $in) {
-		open(STDIN, '<&=' . fileno($in)) || logdie "can't redirect STDIN: $!";
-	} else {
-		my $devnull = File::Spec->devnull;
-		open(STDIN, $devnull) || logdie "can't open $devnull: $!";
-	}
-	open(STDOUT, '>&=' . fileno($out)) || logdie "can't redirect STDOUT: $!";
+    if (defined $in)
+    {
+        open(STDIN, '<&=' . fileno($in)) || logdie "can't redirect STDIN: $!";
+    }
+    else
+    {
+        my $devnull = File::Spec->devnull;
+        open(STDIN, $devnull) || logdie "can't open $devnull: $!";
+    }
+    open(STDOUT, '>&=' . fileno($out)) || logdie "can't redirect STDOUT: $!";
 
-	#
-	# Setup default CGI environment.
-	#
+    #
+    # Setup default CGI environment.
+    #
 
-	while (my ($key, $value) = each %{$self->cgi_env}) {
-		$ENV{$key} = $value;
-	}
+    while (my ($key, $value) = each %{$this->cgi_env})
+    {
+        $ENV{$key} = $value;
+    }
 
-	#
-	# Where there is a script input, setup CONTENT_* variables.
-	# If there's no input, delete CONTENT_* variables.
-	#
+    #
+    # Where there is a script input, setup CONTENT_* variables.
+    # If there's no input, delete CONTENT_* variables.
+    #
 
-	if (defined $in) {
-		$ENV{CONTENT_TYPE}   = $input->mime_type;
-		$ENV{CONTENT_LENGTH} = $input->length;
-	} else {
-		delete $ENV{CONTENT_TYPE};
-		delete $ENV{CONTENT_LENGTH};
-	}
+    if (defined $in)
+    {
+        $ENV{CONTENT_TYPE}   = $input->mime_type;
+        $ENV{CONTENT_LENGTH} = $input->length;
+    }
+    else
+    {
+        delete $ENV{CONTENT_TYPE};
+        delete $ENV{CONTENT_LENGTH};
+    }
 
-	#
-	# Supersede whatever they may have set for the following variables,
-	# which are very request-specific:
-	#
+    #
+    # Supersede whatever they may have set for the following variables,
+    # which are very request-specific:
+    #
 
-	$ENV{REQUEST_METHOD}  = defined $in ? "POST" : "GET";
-	$ENV{PATH_INFO}       = $path;
-	$ENV{SCRIPT_NAME}     = $name;
-	$ENV{SCRIPT_FILENAME} = $script;
-	$ENV{HTTP_HOST}       = $u->host_port;
+    $ENV{REQUEST_METHOD}  = defined $in ? "POST" : "GET";
+    $ENV{PATH_INFO}       = $path;
+    $ENV{SCRIPT_NAME}     = $name;
+    $ENV{SCRIPT_FILENAME} = $script;
+    $ENV{HTTP_HOST}       = $u->host_port;
 
-	if (length $path) {
-		$ENV{PATH_TRANSLATED} = $self->doc_dir . $path;
-	} else {
-		delete $ENV{PATH_TRANSLATED};
-	}
-	if (defined $user) {
-		$ENV{REMOTE_USER} = $user;
-	} else {
-		delete $ENV{REMOTE_USER};
-		delete $ENV{AUTH_TYPE};
-	}
-	if (defined $u->query) {
-		$ENV{QUERY_STRING} = $u->query;
-	} else {
-		delete $ENV{QUERY_STRING};
-	}
+    if (length $path)
+    {
+        $ENV{PATH_TRANSLATED} = $this->doc_dir . $path;
+    }
+    else
+    {
+        delete $ENV{PATH_TRANSLATED};
+    }
 
-	#
-	# Make sure the script sees the same @INC as we do currently.
-	# This is very important when running a regression test suite, to
-	# make sure any CGI script using the module we're testing will see
-	# the files from the build directory.
-	#
-	# Since we're about to chdir() to the cgi-bin directory, we must anchor
-	# any relative path to the current working directory.
-	#
+    if (defined $user)
+    {
+        $ENV{REMOTE_USER} = $user;
+    }
+    else
+    {
+        delete $ENV{REMOTE_USER};
+        delete $ENV{AUTH_TYPE};
+    }
 
-	use Cwd qw(abs_path);
+    if (defined $u->query)
+    {
+        $ENV{QUERY_STRING} = $u->query;
+    }
+    else
+    {
+        delete $ENV{QUERY_STRING};
+    }
 
-	$ENV{PERL5LIB} = join(':', map { -e $_ ? abs_path($_) : $_ } @INC);
+    #
+    # Make sure the script sees the same @INC as we do currently.
+    # This is very important when running a regression test suite, to
+    # make sure any CGI script using the module we're testing will see
+    # the files from the build directory.
+    #
+    # Since we're about to chdir() to the cgi-bin directory, we must anchor
+    # any relative path to the current working directory.
+    #
 
-	#
-	# Now run the script, changing the current directory to the location
-	# of the script, as a web server would.
-	#
+    use Cwd qw(abs_path);
 
-	my $directory = dirname($script);
-	my $basename = basename($script);
+    $ENV{PERL5LIB} = join(':', map {-e $_ ? abs_path($_) : $_} @INC);
 
-	chdir $directory or logdie "can't cd to $directory: $!";
+    #
+    # Now run the script, changing the current directory to the location
+    # of the script, as a web server would.
+    #
 
-	{ exec "./$basename" }
-	logdie "could not exec $script: $!";
-	return DVOID;
+    my $directory = dirname($script);
+    my $basename  = basename($script);
+
+    chdir $directory or logdie "can't cd to $directory: $!";
+
+    {exec "./$basename"}
+    logdie "could not exec $script: $!";
+    return DVOID;
 }
 
+######################################################################
 #
 # ->_parse_header
 #
@@ -510,49 +596,62 @@ sub _run_cgi {
 #
 # Returns ref to hash containing the headers.
 #
-sub _parse_header {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($file) = @_;
-	my %header;
-	local *FILE;
-	open(FILE, $file) || logerr "can't open $file: $!";
-	local $_;
-	my $field;
-	while (<FILE>) {
-		last if /^\015?\012$/ || /^\015\012$/;
-		s/\015?\012$//;
-		if (s/^\s+/ /) {
-			last if $field eq '';		# Cannot be a header
-			$header{$field} .= $_ if $field ne '';
-		} elsif (($field, my $value) = /^([\w-]+)\s*:\s*(.*)/) {
-			$field =~ s/(\w+)/\u\L$1/g;	# Normalize spelling
-			if (exists $header{$field}) {
-				logwarn "duplicate $field header in $file";
-				$header{$field} .= " ";
-			}
-			$header{$field} .= $value;
-		} else {
-			logwarn "mangled header in $file";
-			%header = ();				# Discard what we read sofar
-			last;
-		}
-	}
-	close FILE;
-	return DVAL \%header;
+######################################################################
+sub _parse_header
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($file) = @_;
+    my %header;
+    local *FILE;
+    open(FILE, $file) || logerr "can't open $file: $!";
+    local $_;
+    my $field;
+
+    while (<FILE>)
+    {
+        last if /^\015?\012$/ || /^\015\012$/;
+        s/\015?\012$//;
+        if (s/^\s+/ /)
+        {
+            last if $field eq '';    # Cannot be a header
+            $header{$field} .= $_ if $field ne '';
+        }
+        elsif (($field, my $value) = /^([\w-]+)\s*:\s*(.*)/)
+        {
+            $field =~ s/(\w+)/\u\L$1/g;    # Normalize spelling
+            if (exists $header{$field})
+            {
+                logwarn "duplicate $field header in $file";
+                $header{$field} .= " ";
+            }
+            $header{$field} .= $value;
+        }
+        else
+        {
+            logwarn "mangled header in $file";
+            %header = ();                  # Discard what we read sofar
+            last;
+        }
+    }
+    close FILE;
+    return DVAL \%header;
 }
 
+######################################################################
 #
 # ok
 #
 # Useful to print test result when using Test::Harness.
 #
-sub ok {
-	my ($num, $ok, $comment) = @_;
-	print "not " unless $ok;
-	print "ok $num";
-	print " # $comment" if defined $comment;
-	print "\n";
+######################################################################
+sub ok
+{
+    my ($num, $ok, $comment) = @_;
+    print "not " unless $ok;
+    print "ok $num";
+    print " # $comment" if defined $comment;
+    print "\n";
 }
 
 1;
@@ -566,7 +665,7 @@ CGI::Test - CGI regression test framework
  # In some t/script.t regression test, for instance
  use CGI::Test;                 # exports ok()
 
- my $ct = CGI::Test->make(
+ my $ct = CGI::Test->new(
     -base_url   => "http://some.server:1234/cgi-bin",
     -cgi_dir    => "/path/to/cgi-bin",
  );
@@ -674,7 +773,7 @@ since the test trivially succeeds.
 
 =head2 Creation Interface
 
-The creation routine C<make()> takes the following mandatory parameters:
+The creation routine C<new()> takes the following mandatory parameters:
 
 =over 4
 
@@ -839,7 +938,7 @@ C<CGI::Test> conforms to the CGI/1.1 specifications.
 
 Here is a list of all the known variables.  Some of those are marked
 I<read-only>.  It means you may choose to set them via the C<-cgi_env>
-switch of the C<make()> routine, but your settings will have no effect and
+switch of the C<new()> routine, but your settings will have no effect and
 C<CGI::Test> will always compute a suitable value.
 
 Variables are listed in alphabetical order:
@@ -1018,9 +1117,24 @@ There is no support for the <ISINDEX> tag, which is deprecated.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+	http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+	 http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton F<E<lt>mshiltonj@mshiltonj.comE<gt>>.
 
 =head1 SEE ALSO
 

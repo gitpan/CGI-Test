@@ -1,108 +1,126 @@
-#
-# $Id: Multipart.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Input::Multipart;
+use strict;
+####################################################################
+# $Id: Multipart.pm,v 1.2 2003/09/29 11:00:48 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+####################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Multipart.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Input::Multipart;
 
 #
 # POST input data to be encoded with "multipart/form-data".
 #
 
-require CGI::Test::Input;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Input);
+use CGI::Test::Input;
+use base qw(CGI::Test::Input);
 
 use Carp::Datum;
 use Log::Agent;
 
 #
-# ->make
+# ->new
 #
 # Creation routine
 #
-sub make {
-	DFEATURE my $f_;
-	my $self = bless {}, shift;
-	$self->_init;
-	$self->{boundary} = "-------------cgi-test--------------" .
-		int(rand(1 << 31)) . '-' . int(rand(1 << 31));
-	return DVAL $self;
+sub new
+{
+    DFEATURE my $f_;
+    my $this = bless {}, shift;
+    $this->_init;
+    $this->{boundary} =
+        "-------------cgi-test--------------"
+      . int(rand(1 << 31)) . '-'
+      . int(rand(1 << 31));
+    return DVAL $this;
+}
+
+# DEPRECATED METHOD
+sub make
+{    #
+    my $class = shift;
+    return $class->new(@_);
 }
 
 #
 # Attribute access
 #
 
-sub boundary		{ $_[0]->{boundary} }
+sub boundary
+{
+    my $this = shift;
+    return $this->{boundary};
+}
 
 #
 # Defined interface
 #
 
-sub mime_type		{ "multipart/form-data; boundary=" . $_[0]->{boundary} }
+sub mime_type
+{
+    my $this = shift;
+    "multipart/form-data; boundary=" . $this->boundary();
+}
 
 #
 # ->_build_data
 #
 # Rebuild data buffer from input fields.
 #
-sub _build_data {
-	DFEATURE my $f_;
-	my $self = shift;
+sub _build_data
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	my $CRLF = "\015\012";
-	my $data = '';
-	my $fmt = 'Content-Disposition: form-data; name="%s"';
-	my $boundary = "--" . $self->boundary;	# With extra "--" per MIME specs
+    my $CRLF = "\015\012";
+    my $data = '';
+    my $fmt  = 'Content-Disposition: form-data; name="%s"';
+    my $boundary = "--" . $this->boundary();  # With extra "--" per MIME specs
 
-	# XXX field name encoding of special chars?
-	# XXX does not escape "" in filenames
+    # XXX field name encoding of special chars?
+    # XXX does not escape "" in filenames
 
-	foreach my $tuple (@{$self->_fields}) {
-		my ($name, $value) = @$tuple;
-		$data .= $boundary . $CRLF;
-		$data .= sprintf($fmt, $name) . $CRLF . $CRLF;
-		$data .= $value . $CRLF;
-	}
+    foreach my $tuple (@{$this->_fields()})
+    {
+        my ($name, $value) = @$tuple;
+        $data .= $boundary . $CRLF;
+        $data .= sprintf($fmt, $name) . $CRLF . $CRLF;
+        $data .= $value . $CRLF;
+    }
 
-	foreach my $tuple (@{$self->_files}) {
-		my ($name, $value, $content) = @$tuple;
-		$data .= $boundary . $CRLF;
-		$data .= sprintf($fmt, $name);
-		$data .= sprintf('; filename="%s"', $value). $CRLF;
-		$data .= "Content-Type: application/octet-stream" . $CRLF . $CRLF;
-		if (defined $content) {
-			$data .= $content;
-		} else {
-			local *FILE;
-			if (open(FILE, $value)) {		# Might not exist, but that's OK
-				binmode FILE;
-				local $_;
-				while (<FILE>) {
-					$data .= $_;
-				}
-				close FILE;
-			}
-		}
-	}
+    foreach my $tuple (@{$this->_files()})
+    {
+        my ($name, $value, $content) = @$tuple;
+        $data .= $boundary . $CRLF;
+        $data .= sprintf($fmt, $name);
+        $data .= sprintf('; filename="%s"', $value) . $CRLF;
+        $data .= "Content-Type: application/octet-stream" . $CRLF . $CRLF;
+        if (defined $content)
+        {
+            $data .= $content;
+        }
+        else
+        {
+            local *FILE;
+            if (open(FILE, $value))
+            {    # Might not exist, but that's OK
+                binmode FILE;
+                local $_;
+                while (<FILE>)
+                {
+                    $data .= $_;
+                }
+                close FILE;
+            }
+        }
+    }
 
-	$data .= $boundary . $CRLF;
+    $data .= $boundary . $CRLF;
 
-	return DVAL $data;
+    return DVAL $data;
 }
 
 1;
@@ -116,7 +134,7 @@ CGI::Test::Input::Multipart - POST input encoded as multipart/form-data
  # Inherits from CGI::Test::Input
  require CGI::Test::Input::Multipart;
 
- my $input = CGI::Test::Input::Multipart->make();
+ my $input = CGI::Test::Input::Multipart->new();
 
 =head1 DESCRIPTION
 
@@ -125,9 +143,24 @@ as C<multipart/form-data>.
 
 Please see L<CGI::Test::Input> for interface details.
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

@@ -1,30 +1,21 @@
-#
-# $Id: Reset.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Form::Widget::Button::Reset;
+use strict;
+##################################################################
+# $Id: Reset.pm,v 1.2 2003/09/29 11:00:39 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Reset.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Button::Reset;
-
 #
 # This class models a FORM reset button.
 #
 
 require CGI::Test::Form::Widget::Button;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget::Button);
+use base qw(CGI::Test::Form::Widget::Button);
 
 use Carp::Datum;
 use Log::Agent;
@@ -33,7 +24,10 @@ use Log::Agent;
 # Attribute access
 #
 
-sub gui_type	{ "reset button" }
+sub gui_type
+{
+    return "reset button";
+}
 
 #
 # ->press
@@ -43,24 +37,31 @@ sub gui_type	{ "reset button" }
 #
 # Returns undef.
 #
-sub press {
-	DFEATURE my $f_;
-	my $self = shift;
-	$self->form->reset;
-	return DVAL undef;
+sub press
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    $this->form->reset();
+    return DVAL undef;
 }
 
 #
 # Global widget predicates
 #
 
-sub is_read_only	{ 1 }		# Handled internally by client
+sub is_read_only
+{
+    return 1;
+}    # Handled internally by client
 
 #
 # Button predicates
 #
 
-sub is_reset	{ 1 }
+sub is_reset
+{
+    return 1;
+}
 
 1;
 
@@ -85,9 +86,24 @@ client-side, and no request is made to the HTTP server.
 The interface is the same as the one described in
 L<CGI::Test::Form::Widget::Button>.
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

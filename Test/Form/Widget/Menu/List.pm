@@ -1,30 +1,21 @@
-#
-# $Id: List.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Form::Widget::Menu::List;
+use strict;
+##################################################################
+# $Id: List.pm,v 1.2 2003/09/29 11:00:47 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
-#
-# HISTORY
-# $Log: List.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Menu::List;
 
 #
 # This class models a FORM scrollable list.
 #
 
-require CGI::Test::Form::Widget::Menu;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget::Menu);
+use CGI::Test::Form::Widget::Menu;
+use base qw(CGI::Test::Form::Widget::Menu);
 
 use Carp::Datum;
 use Log::Agent;
@@ -36,12 +27,11 @@ use Log::Agent;
 # to translate that into class attributes.
 #
 
-my %attr = (
-	'name'		=> 'name',
-	'size'		=> 'size',
-	'multiple'	=> 'multiple',
-	'disabled'	=> 'is_disabled',
-);
+my %attr = ('name'     => 'name',
+            'size'     => 'size',
+            'multiple' => 'multiple',
+            'disabled' => 'is_disabled',
+            );
 
 #
 # ->_init
@@ -49,13 +39,14 @@ my %attr = (
 # Per-widget initialization routine.
 # Parse HTML node to determine our specific parameters.
 #
-sub _init {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($node) = shift;
-	$self->_parse_attr($node, \%attr);
-	$self->_parse_options($node);
-	return DVOID;
+sub _init
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($node) = shift;
+    $this->_parse_attr($node, \%attr);
+    $this->_parse_options($node);
+    return DVOID;
 }
 
 #
@@ -64,27 +55,39 @@ sub _init {
 # Returns list of (name => value) tuples that should be part of the
 # submitted form data.
 #
-sub submit_tuples {
-	DFEATURE my $f_;
-	my $self = shift;
+sub submit_tuples
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	DREQUIRE $self->is_submitable;
+    DREQUIRE $this->is_submitable();
 
-	return DARY map { $self->name => $_ } keys %{$self->selected};
+    return DARY map {$this->name => $_} keys %{$this->selected()};
 }
 
 #
 # Attribute access
 #
 
-sub size		{ $_[0]->{size} }
-sub gui_type	{ "scrolling list" }
+sub size
+{
+    my $this = shift;
+    return $this->{size};
+}
+
+sub gui_type
+{
+    "scrolling list"
+}
 
 #
 # Defined predicates
 #
 
-sub is_popup	{ 0 }
+sub is_popup
+{
+    return 0;
+}
 
 1;
 
@@ -119,9 +122,24 @@ The amount of choices displayed.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

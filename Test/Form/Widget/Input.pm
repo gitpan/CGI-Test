@@ -1,31 +1,23 @@
-#
-# $Id: Input.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Form::Widget::Input;
+use strict;
+##################################################################
+# $Id: Input.pm,v 1.2 2003/09/29 11:00:38 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Input.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Input;
 
 #
 # This class models a FORM input field.
 # It factorizes the interface of our heirs: Text_Area and Text_Field
 #
 
-require CGI::Test::Form::Widget;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget);
+use CGI::Test::Form::Widget;
+use base qw(CGI::Test::Form::Widget);
 
 use Carp::Datum;
 use Log::Agent;
@@ -36,10 +28,11 @@ use Log::Agent;
 # Is the enabled widget "successful", according to W3C's specs?
 # Any input is.
 #
-sub _is_successful {
-	DFEATURE my $f_;
-	my $self = shift;
-	return DVAL 1;
+sub _is_successful
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    return DVAL 1;
 }
 
 #
@@ -57,32 +50,84 @@ sub _is_successful {
 # In the traditional Perl way...
 #
 
-sub prepend		{ $_[0]->set_value($_[1] . $_[0]->value) }
-sub append		{ $_[0]->set_value($_[0]->value . $_[1]) }
-sub replace		{ $_[0]->set_value($_[1]) }
-sub clear		{ $_[0]->set_value('') }
-sub filter		{ local $_ = $_[0]->value; &{$_[1]}; $_[0]->set_value($_) }
+sub prepend
+{
+    my $this    = shift;
+    my $prepend = shift;
+    $this->set_value($prepend . $this->value());
+}
+
+sub append
+{
+    my $this   = shift;
+    my $append = shift;
+    $this->set_value($this->value() . $append);
+}
+
+sub replace
+{
+    my $this      = shift;
+    my $new_value = shift;
+    $this->set_value($new_value);
+}
+
+sub clear
+{
+    my $this = shift;
+    $this->set_value('');
+}
+
+sub filter
+{
+    my $this   = shift;
+    my $filter = shift;
+    local $_ = $this->value();
+    &{$filter};
+    $this->set_value($_);
+}
 
 #
 # Attribute access
 #
 
-sub is_read_only	{ $_[0]->{is_read_only} }
+sub is_read_only
+{
+    my $this = shift;
+    return $this->{is_read_only};
+}
 
 #
 # High-level classification predicates
 #
 
-sub is_input	{ 1 }
+sub is_input
+{
+    return 1;
+}
 
 #
 # Predicates for the Input hierarchy
 #
 
-sub is_field	{ 0 }
-sub is_area		{ 0 }
-sub is_password	{ 0 }
-sub is_file		{ 0 }
+sub is_field
+{
+    return 0;
+}
+
+sub is_area
+{
+    return 0;
+}
+
+sub is_password
+{
+    return 0;
+}
+
+sub is_file
+{
+    return 0;
+}
 
 1;
 
@@ -168,9 +213,24 @@ Returns I<true> for a password field (text field with input masked by GUI).
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

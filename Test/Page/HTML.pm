@@ -1,51 +1,55 @@
-#
-# $Id: HTML.pm,v 0.1 2001/03/31 10:54:03 ram Exp $
+package CGI::Test::Page::HTML;
+use strict;
+####################################################################
+# $Id: HTML.pm,v 1.2 2003/09/29 11:00:49 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+####################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
-#
-# HISTORY
-# $Log: HTML.pm,v $
-# Revision 0.1  2001/03/31 10:54:03  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Page::HTML;
 
 use Carp::Datum;
 use Getargs::Long;
 
 require CGI::Test::Page::Real;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Page::Real);
+use base qw(CGI::Test::Page::Real);
 
 #
-# ->make
+# ->new
 #
 # Creation routine
 #
-sub make {
-	DFEATURE my $f_;
-	my $self = bless {}, shift;
-	$self->_init(@_);
-	return DVAL $self;
+sub new
+{
+    DFEATURE my $f_;
+    my $this = bless {}, shift;
+    $this->_init(@_);
+    return DVAL $this;
 }
 
 #
 # Attribute access
 #
 
-sub tree		{ $_[0]->{tree}  || $_[0]->_build_tree }
-sub forms		{ $_[0]->{forms} || $_[0]->_xtract_forms }
-sub form_count	{
-	$_[0]->_xtract_forms unless exists $_[0]->{form_count};
-	return $_[0]->{form_count};
+sub tree
+{
+    my $this = shift;
+    return $this->{tree} || $this->_build_tree();
+}
+
+sub forms
+{
+    my $this = shift;
+    return $this->{forms} || $this->_xtract_forms();
+}
+
+sub form_count
+{
+    my $this = shift;
+    $this->_xtract_forms() unless exists $this->{form_count};
+    return $this->{form_count};
 }
 
 #
@@ -56,23 +60,24 @@ sub form_count	{
 #
 # Returns constructed tree object.
 #
-sub _build_tree {
-	DFEATURE my $f_;
-	my $self = shift;
+sub _build_tree
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	require HTML::TreeBuilder;
+    require HTML::TreeBuilder;
 
-	my $tree = HTML::TreeBuilder->new();
-	$tree->ignore_unknown(0);		# Keep everything, even unknown tags
-	$tree->store_comments(1);		# Useful things may hide in "comments"
-	$tree->store_declarations(1);	# Store everything that we may test
-	$tree->store_pis(1);			# Idem
-	$tree->warn(1);					# We want to know if there's a problem
+    my $tree = HTML::TreeBuilder->new();
+    $tree->ignore_unknown(0);        # Keep everything, even unknown tags
+    $tree->store_comments(1);        # Useful things may hide in "comments"
+    $tree->store_declarations(1);    # Store everything that we may test
+    $tree->store_pis(1);             # Idem
+    $tree->warn(1);                  # We want to know if there's a problem
 
-	$tree->parse($self->raw_content);
-	$tree->eof;
+    $tree->parse($this->raw_content);
+    $tree->eof;
 
-	return DVAL $self->{tree} = $tree;
+    return DVAL $this->{tree} = $tree;
 }
 
 #
@@ -86,26 +91,25 @@ sub _build_tree {
 #
 # Returns list ref of objects, in the order they were found.
 #
-sub _xtract_forms {
-	DFEATURE my $f_;
-	my $self = shift;
-	my $tree = $self->tree;
+sub _xtract_forms
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my $tree = $this->tree;
 
-	require CGI::Test::Form;
+    require CGI::Test::Form;
 
-	#
-	# The CGI::Test::Form objects we're about to create will refer back to
-	# us, because they are conceptually part of this page.  Besides, their
-	# HTML tree is a direct reference into our own tree.
-	#
+    #
+    # The CGI::Test::Form objects we're about to create will refer back to
+    # us, because they are conceptually part of this page.  Besides, their
+    # HTML tree is a direct reference into our own tree.
+    #
 
-	my @forms = $tree->look_down(
-		sub { $_[0]->tag eq "form" }
-	);
-	@forms = map { CGI::Test::Form->make($_, $self) } @forms;
+    my @forms = $tree->look_down(sub {$_[ 0 ]->tag eq "form"});
+    @forms = map {CGI::Test::Form->new($_, $this)} @forms;
 
-	$self->{form_count} = scalar @forms;
-	return DVAL $self->{forms} = \@forms;
+    $this->{form_count} = scalar @forms;
+    return DVAL $this->{forms} = \@forms;
 }
 
 #
@@ -113,25 +117,28 @@ sub _xtract_forms {
 #
 # Break circular references
 #
-sub delete {
-	DFEATURE my $f_;
-	my $self = shift;
+sub delete
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	#
-	# The following attributes are "lazy", i.e. calculated on demand.
-	# Therefore, take precautions before de-referencing them.
-	#
- 
-	$self->{tree} = $self->{tree}->delete if ref $self->{tree};
-	if (ref $self->{forms}) {
-		foreach my $form (@{$self->{forms}}) {
-			$form->delete;
-		}
-		delete $self->{forms};
-	}
+    #
+    # The following attributes are "lazy", i.e. calculated on demand.
+    # Therefore, take precautions before de-referencing them.
+    #
 
-	$self->SUPER::delete;
-	return DVOID;
+    $this->{tree} = $this->{tree}->delete if ref $this->{tree};
+    if (ref $this->{forms})
+    {
+        foreach my $form (@{$this->{forms}})
+        {
+            $form->delete;
+        }
+        delete $this->{forms};
+    }
+
+    $this->SUPER::delete;
+    return DVOID;
 }
 
 #
@@ -139,12 +146,13 @@ sub delete {
 #
 # Dispose of HTML tree properly
 #
-sub DESTROY {
-	DFEATURE my $f_;
-	my $self = shift;
-	return DVOID unless ref $self->{tree};
-	$self->{tree} = $self->{tree}->delete;
-	return DVOID;
+sub DESTROY
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    return DVOID unless ref $this->{tree};
+    $this->{tree} = $this->{tree}->delete;
+    return DVOID;
 }
 
 1;
@@ -176,9 +184,24 @@ HTML::Element node.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

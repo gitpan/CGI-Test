@@ -1,30 +1,21 @@
-#
-# $Id: Text_Field.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Form::Widget::Input::Text_Field;
+use strict;
+##################################################################
+# $Id: Text_Field.pm,v 1.2 2003/09/29 11:00:47 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Text_Field.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Input::Text_Field;
-
 #
 # This class models a FORM text field.
 #
 
-require CGI::Test::Form::Widget::Input;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget::Input);
+use CGI::Test::Form::Widget::Input;
+use base qw(CGI::Test::Form::Widget::Input);
 
 use Carp::Datum;
 use Log::Agent;
@@ -36,14 +27,13 @@ use Log::Agent;
 # to translate that into class attributes.
 #
 
-my %attr = (
-	'name'		=> 'name',
-	'value'		=> 'value',
-	'size'		=> 'size',
-	'maxlength'	=> 'max_length',
-	'disabled'	=> 'is_disabled',
-	'readonly'	=> 'is_read_only',
-);
+my %attr = ('name'      => 'name',
+            'value'     => 'value',
+            'size'      => 'size',
+            'maxlength' => 'max_length',
+            'disabled'  => 'is_disabled',
+            'readonly'  => 'is_read_only',
+            );
 
 #
 # ->_init
@@ -51,28 +41,42 @@ my %attr = (
 # Per-widget initialization routine.
 # Parse HTML node to determine our specific parameters.
 #
-sub _init {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($node) = shift;
-	$self->_parse_attr($node, \%attr);
-	return DVOID;
+sub _init
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($node) = shift;
+    $this->_parse_attr($node, \%attr);
+    return DVOID;
 }
 
 #
 # Attribute access
 #
 
-sub size		{ $_[0]->{size} }
-sub max_length	{ $_[0]->{max_length} }
+sub size
+{
+    $_[ 0 ]->{size};
+}
 
-sub gui_type	{ "text field" }
+sub max_length
+{
+    $_[ 0 ]->{max_length};
+}
+
+sub gui_type
+{
+    "text field"
+}
 
 #
 # Redefined predicates
 #
 
-sub is_field	{ 1 }
+sub is_field
+{
+    1
+}
 
 #
 # Redefined routines
@@ -84,23 +88,25 @@ sub is_field	{ 1 }
 # Ensure text is not larger than the maximum field length, by truncating
 # from the right.
 #
-sub set_value {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($value) = @_;
+sub set_value
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($value) = @_;
 
-	my $maxlen = $self->max_length;
-	$maxlen = 1 if defined $maxlen && $maxlen < 1;
+    my $maxlen = $this->max_length;
+    $maxlen = 1 if defined $maxlen && $maxlen < 1;
 
-	if (defined $maxlen && length($value) > $maxlen) {
-		logcarp "truncating text to %d byte%s for %s '%s'",
-			$maxlen, $maxlen == 1 ? "" : "s", $self->gui_type, $self->name;
-		substr($value, $maxlen) = '';
-	}
+    if (defined $maxlen && length($value) > $maxlen)
+    {
+        logcarp "truncating text to %d byte%s for %s '%s'", $maxlen,
+          $maxlen == 1 ? "" : "s", $this->gui_type, $this->name;
+        substr($value, $maxlen) = '';
+    }
 
-	DASSERT !defined($maxlen) || length($value) <= $maxlen;
+    DASSERT !defined($maxlen) || length($value) <= $maxlen;
 
-	$self->SUPER::set_value($value);
+    $this->SUPER::set_value($value);
 }
 
 1;
@@ -140,9 +146,24 @@ the field can be much larger than that, however.
 
 =back
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

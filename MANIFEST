@@ -1,5 +1,6 @@
-README                                 The main README file
+ARTISTIC                               Text of the Artistic License
 MANIFEST                               This shipping list
+README                                 The main README file
 ChangeLog                              List of changes
 Makefile.PL                            Builds Makefile
 Test.pm                                Main CGI test harness interface

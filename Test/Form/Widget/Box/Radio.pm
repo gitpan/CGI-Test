@@ -1,30 +1,22 @@
-#
-# $Id: Radio.pm,v 0.1 2001/03/31 10:54:01 ram Exp $
+package CGI::Test::Form::Widget::Box::Radio;
+use strict;
+##################################################################
+# $Id: Radio.pm,v 1.2 2003/09/29 11:00:38 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+##################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Radio.pm,v $
-# Revision 0.1  2001/03/31 10:54:01  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Form::Widget::Box::Radio;
 
 #
 # This class models a FORM radio button.
 #
 
-require CGI::Test::Form::Widget::Box;
-use vars qw(@ISA);
-@ISA = qw(CGI::Test::Form::Widget::Box);
+use CGI::Test::Form::Widget::Box;
+use base qw(CGI::Test::Form::Widget::Box);
 
 use Carp::Datum;
 use Log::Agent;
@@ -38,44 +30,60 @@ use Log::Agent;
 # un-checkable.  Therefore, $checked must always be true.  Furthermore,
 # all related radio buttons must be cleared.
 #
-sub set_is_checked {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($checked) = @_;
+sub set_is_checked
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($checked) = @_;
 
-	DREQUIRE $checked, "can only click on radio buttons";
+    DREQUIRE $checked, "can only click on radio buttons";
 
-	return DVOID if !$checked == !$self->is_checked;	# No change
+    return DVOID if !$checked == !$this->is_checked();    # No change
 
-	#
-	# We're checking a radio button that was cleared previously.
-	# All the other radio buttons in the group are going to be cleared.
-	#
+    #
+    # We're checking a radio button that was cleared previously.
+    # All the other radio buttons in the group are going to be cleared.
+    #
 
-	$self->_frozen_set_is_checked($checked);
-	foreach my $radio ($self->group_list) {
-		next if $radio == $self;
-		$radio->_frozen_set_is_checked(0);
-	}
+    $this->_frozen_set_is_checked($checked);
+    foreach my $radio ($this->group_list)
+    {
+        next if $radio == $this;
+        $radio->_frozen_set_is_checked(0);
+    }
 
-	DENSURE $self->is_checked, "radio button is checked";
+    DENSURE $this->is_checked(), "radio button is checked";
 
-	return DVOID;
+    return DVOID;
 }
 
-sub uncheck			{ logcarp "ignoring uncheck on radio button" }
-sub uncheck_tagged	{ logcarp "ignoring uncheck_tagged on radio button" }
+sub uncheck
+{
+    logcarp "ignoring uncheck on radio button";
+}
+
+sub uncheck_tagged
+{
+    logcarp "ignoring uncheck_tagged on radio button";
+}
 
 #
 # Attribute access
 #
 
-sub gui_type	{ "radio button" }
+sub gui_type
+{
+    return "radio button";
+}
+
 #
 # Defined predicates
 #
 
-sub is_radio	{ 1 }
+sub is_radio
+{
+    return 1;
+}
 
 1;
 
@@ -110,9 +118,24 @@ in L<CGI::Test::Form::Widget::Box>.
 Any attempt to C<uncheck> a radio button will be ignored, and a warning
 emitted via C<logcarp>, to help you identify the caller.
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 

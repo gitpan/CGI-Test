@@ -1,22 +1,15 @@
-#
-# $Id: Input.pm,v 0.1 2001/03/31 10:54:02 ram Exp $
+package CGI::Test::Input;
+use strict;
+####################################################################
+# $Id: Input.pm,v 1.2 2003/09/29 11:00:37 mshiltonj Exp $
+# $Name: cgi-test_0-104_t1 $
+#####################################################################
 #
 #  Copyright (c) 2001, Raphael Manfredi
-#  
+#
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
-# HISTORY
-# $Log: Input.pm,v $
-# Revision 0.1  2001/03/31 10:54:02  ram
-# Baseline for first Alpha release.
-#
-# $EndLog$
-#
-
-use strict;
-
-package CGI::Test::Input;
 
 #
 # Abstract representation of the POST input data, which is a list of incoming
@@ -26,41 +19,75 @@ package CGI::Test::Input;
 use Carp::Datum;
 use Log::Agent;
 
+############################################################
 #
-# ->make
+# ->new
 #
 # Creation routine
 #
-sub make {
-	logconfess "deferred";
+############################################################
+sub new
+{
+    logconfess "deferred";
 }
 
+############################################################
 #
 # ->_init
 #
 # Initialization of common attributes
 #
-sub _init {
-	DFEATURE my $f_;
-	my $self = shift;
-	$self->{stale} = 0;
-	$self->{fields} = [];		# list of [name, value]
-	$self->{files} = [];		# list of [name, value, content or undef]
-	$self->{length} = 0;
-	$self->{data} = '';
-	return DVOID;
+############################################################
+sub _init
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    $this->{stale}  = 0;
+    $this->{fields} = [];    # list of [name, value]
+    $this->{files}  = [];    # list of [name, value, content or undef]
+    $this->{length} = 0;
+    $this->{data}   = '';
+    return DVOID;
 }
 
 #
 # Attribute access
 #
 
-sub _stale		{ $_[0]->{stale} }
-sub _fields		{ $_[0]->{fields} }
-sub _files		{ $_[0]->{files} }
-sub length		{ $_[0]->_refresh if $_[0]->_stale; $_[0]->{length} }
-sub data		{ $_[0]->_refresh if $_[0]->_stale; $_[0]->{data} }
+############################################################
+sub _stale
+{
+    my $this = shift;
+    $this->{stale};
+}
+############################################################
+sub _fields
+{
+    my $this = shift;
+    $this->{fields};
+}
+############################################################
+sub _files
+{
+    my $this = shift;
+    $this->{files};
+}
+############################################################
+sub length
+{
+    my $this = shift;
+    $this->_refresh() if $this->_stale();
+    $this->{length};
+}
+############################################################
+sub data
+{
+    my $this = shift;
+    $this->_refresh() if $this->_stale();
+    $this->{data};
+}
 
+############################################################
 #
 # ->add_widget
 #
@@ -69,33 +96,37 @@ sub data		{ $_[0]->_refresh if $_[0]->_stale; $_[0]->{data} }
 # This routine is called to build input data for POST requests issued in
 # response to a submit button being pressed.
 #
-sub add_widget {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($w) = @_;
+############################################################
+sub add_widget
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($w) = @_;
 
-	DREQUIRE ref $w && $w->isa("CGI::Test::Form::Widget");
+    DREQUIRE ref $w && $w->isa("CGI::Test::Form::Widget");
 
-	#
-	# Appart from the fact that file widgets get inserted in a dedicated list,
-	# the processing here is the same.  The 3rd value of the entry for files
-	# will be undefined, meaning the file will be read at a later time, when
-	# the input data is built.
-	#
+    #
+    # Appart from the fact that file widgets get inserted in a dedicated list,
+    # the processing here is the same.  The 3rd value of the entry for files
+    # will be undefined, meaning the file will be read at a later time, when
+    # the input data is built.
+    #
 
-	my @tuples = $w->submit_tuples;
-	my $array = $w->is_file ? $self->_files : $self->_fields;
+    my @tuples = $w->submit_tuples;
+    my $array  = $w->is_file ? $this->_files : $this->_fields;
 
-	while (my ($name, $value) = splice @tuples, 0, 2) {
-		$value = '' unless defined $value;
-		push @$array, [$name, $value];
-	}
+    while (my ($name, $value) = splice @tuples, 0, 2)
+    {
+        $value = '' unless defined $value;
+        push @$array, [ $name, $value ];
+    }
 
-	$self->{stale} = 1;
+    $this->{stale} = 1;
 
-	return DVOID;
+    return DVOID;
 }
 
+############################################################
 #
 # ->add_field
 #
@@ -103,18 +134,21 @@ sub add_widget {
 #
 # This routine is meant for manual input data building.
 #
-sub add_field {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($name, $value) = @_;
+############################################################
+sub add_field
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($name, $value) = @_;
 
-	$value = '' unless defined $value;
-	push @{$self->_fields}, [$name, $value];
-	$self->{stale} = 1;
+    $value = '' unless defined $value;
+    push @{$this->_fields}, [ $name, $value ];
+    $this->{stale} = 1;
 
-	return DVOID;
+    return DVOID;
 }
 
+############################################################
 #
 # ->add_file
 #
@@ -124,18 +158,21 @@ sub add_field {
 #
 # This routine is meant for manual input data building.
 #
-sub add_file {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($name, $value) = @_;
+############################################################
+sub add_file
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($name, $value) = @_;
 
-	$value = '' unless defined $value;
-	push @{$self->_files}, [$name, $value];
-	$self->{stale} = 1;
+    $value = '' unless defined $value;
+    push @{$this->_files}, [ $name, $value ];
+    $this->{stale} = 1;
 
-	return DVOID;
+    return DVOID;
 }
 
+############################################################
 #
 # ->add_file_now
 #
@@ -144,62 +181,76 @@ sub add_file {
 #
 # This routine is meant for manual input data building.
 #
-sub add_file_now {
-	DFEATURE my $f_;
-	my $self = shift;
-	my ($name, $value) = @_;
+############################################################
+sub add_file_now
+{
+    DFEATURE my $f_;
+    my $this = shift;
+    my ($name, $value) = @_;
 
-	VERIFY -r $value, "readable file '$value'";
+    VERIFY -r $value, "readable file '$value'";
 
-	local *FILE;
-	open(FILE, $value);
-	binmode FILE;
+    local *FILE;
+    open(FILE, $value);
+    binmode FILE;
 
-	local $_;
-	my $content = '';
+    local $_;
+    my $content = '';
 
-	while (<FILE>) {
-		$content .= $_;
-	}
-	close FILE;
+    while (<FILE>)
+    {
+        $content .= $_;
+    }
+    close FILE;
 
-	push @{$self->_files}, [$name, $value, $content];
-	$self->{stale} = 1;
+    push @{$this->_files}, [ $name, $value, $content ];
+    $this->{stale} = 1;
 
-	return DVOID;
+    return DVOID;
 }
 
 #
 # Interface to be implemented by heirs
 #
 
-sub mime_type		{ logconfess "deferred" }
-sub _build_data		{ logconfess "deferred" }
+############################################################
+sub mime_type
+{
+    logconfess "deferred";
+}
+############################################################
+sub _build_data
+{
+    logconfess "deferred";
+}
 
 #
 # Internal routines
 #
 
+############################################################
 #
 # ->_refresh
 #
 # Recomputes `data' and `length' attributes when stale
 #
-sub _refresh {
-	DFEATURE my $f_;
-	my $self = shift;
+############################################################
+sub _refresh
+{
+    DFEATURE my $f_;
+    my $this = shift;
 
-	DREQUIRE $self->_stale;				# internal pre-condition
+    DREQUIRE $this->_stale;    # internal pre-condition
 
-	my $data = $self->_build_data;		# deferred
+    my $data = $this->_build_data;    # deferred
 
-	$self->{data} = $data;
-	$self->{length} = CORE::length $data;
-	$self->{stale} = 0;
+    $this->{data}   = $data;
+    $this->{length} = CORE::length $data;
+    $this->{stale}  = 0;
 
-	DENSURE !$self->_stale;
+    DENSURE !$this->_stale;
 
-	return DVOID;
+    return DVOID;
 }
 
 1;
@@ -247,7 +298,7 @@ corresponding to the CGI parameters to submit.
 
 For instance:
 
-    my $input = CGI::Test::Input::Multipart->make();
+    my $input = CGI::Test::Input::Multipart->new();
     $input->add_field("login", "ram");
     $input->add_field("password", "foobar");
     $input->add_file("organization", "/etc/news/organization");
@@ -266,7 +317,7 @@ of C<CGI::Test>.
 
 =head2 Creation Routine
 
-It is called C<make> as usual.  All subclasses have
+It is called C<new> as usual.  All subclasses have
 the same creation routine signature, which takes no parameter.
 
 =head2 Adding Parameters
@@ -325,9 +376,24 @@ Returns the data length.
 
 Please let me know about them.
 
-=head1 AUTHOR
+=head1 WEBSITE
 
-Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>
+You can find information about CGI::Test and other related modules at:
+
+   http://cgi-test.sourceforge.net
+
+=head1 PUBLIC CVS SERVER
+
+CGI::Test now has a publicly accessible CVS server provided by
+SourceForge (www.sourceforge.net).  You can access it by going to:
+
+    http://sourceforge.net/cvs/?group_id=89570
+
+=head1 AUTHORS
+
+The original author is Raphael Manfredi F<E<lt>Raphael_Manfredi@pobox.comE<gt>>. 
+
+Send bug reports, hints, tips, suggestions to Steven Hilton at <mshiltonj@mshiltonj.com>
 
 =head1 SEE ALSO
 
