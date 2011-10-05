@@ -6,27 +6,32 @@
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
+#
 
 use ExtUtils::MakeMaker;
-eval q(use Carp::Datum::MakeMaker;);
 
+# See lib/ExtUtils/MakeMaker.pm for details of how to influence
+# the contents of the Makefile that is written.
 WriteMakefile(
-    'NAME'         => 'CGI::Test',
-    'VERSION_FROM' => 'Test.pm',     # finds $VERSION
-    'PREREQ_PM' => {'CGI'               => '0',
-                    'Carp::Datum'       => '0',
-                    'Digest::MD5'       => '0',
-                    'Getargs::Long'     => '0.103',
-                    'Log::Agent'        => '0.207',
-                    'URI'               => '1.10',
-                    'HTTP::Status'      => '0',
-                    'HTML::TreeBuilder' => '0',
-                    'File::Temp'        => '0',
-                    'File::Spec'        => '0',
-                    'Storable'          => '1.000',
+    NAME              => 'CGI::Test',
+    VERSION_FROM      => 'lib/CGI/Test.pm', # finds $VERSION
+    PREREQ_PM         => {
+        'CGI'               => '0',
+        'Digest::MD5'       => '0',
+        'Getargs::Long'     => '0.103',
+        'Log::Agent'        => '0.207',
+        'URI'               => '1.10',
+        ($] >= 5.008                   # HTTP::Status is now in
+         ? ('HTTP::Message' => '0', )  # HTTP::Message bundle which
+         : ('LWP'           => '0', )  # requires 5.8+
+        ),
+        'HTML::TreeBuilder' => '0',
+        'File::Temp'        => '0',
+        'File::Spec'        => '0',
+        'Storable'          => '1.000',
     },
-    'LIBS'   => [ '' ],    # e.g., '-lm'
-    'DEFINE' => '',        # e.g., '-DHAVE_SOMETHING'
-    'INC'    => '',        # e.g., '-I/usr/include/other'
-    );
+    ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
+      (ABSTRACT => 'CGI regression test framework',
+       AUTHOR   => 'Raphael Manfredi <Raphael_Manfredi@pobox.com>') : ()),
+);
 
