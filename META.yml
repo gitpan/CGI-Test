@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               CGI-Test
-version:            0.2.4
+version:            0.3
 abstract:           CGI regression test framework
 author:
     - Raphael Manfredi <Raphael_Manfredi@pobox.com>
@@ -15,14 +15,12 @@ requires:
     Digest::MD5:        0
     File::Spec:         0
     File::Temp:         0
-    Getargs::Long:      0.103
     HTML::TreeBuilder:  0
     HTTP::Message:      0
-    Log::Agent:         0.207
     Storable:           1.000
     URI:                1.10
 resources:
-    bugtracker:  http://rt.cpan.org/NoAuth/Bugs.html?Dist=CGI-Test
+    bugtracker:  http://github.com/nohuhu/CGI-Test/issues
     repository:  http://github.com/nohuhu/CGI-Test
 no_index:
     directory:
