@@ -44,4 +44,5 @@ t/play_multi.t
 t/play_post.t
 t/pod.t
 t/post.t
-META.yml                                 Module meta-data (added by MakeMaker)
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
