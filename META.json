@@ -4,7 +4,7 @@
       "Raphael Manfredi <Raphael_Manfredi@pobox.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.84, CPAN::Meta::Converter version 2.132661",
+   "generated_by" : "ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "perl_5"
    ],
@@ -52,5 +52,5 @@
          "url" : "http://github.com/nohuhu/CGI-Test"
       }
    },
-   "version" : "0.31"
+   "version" : "0.32"
 }
