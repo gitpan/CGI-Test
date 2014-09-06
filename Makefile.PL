@@ -1,73 +1,109 @@
 #
-# $Id$
-#
 #  Copyright (c) 2001, Raphael Manfredi
-#  Copyright (c) 2011-2014 Alexander Tokarev
+#  Copyright (c) 2003, Steven Hilton
+#  Copyright (c) 2011-2014, Alex Tokarev
 #
 #  You may redistribute only under the terms of the Artistic License,
 #  as specified in the README file that comes with the distribution.
 #
 #
 use ExtUtils::MakeMaker;
+use Config;
 
-die "OS unsupported" if $^O =~ /Win32/;
+# Add the `devtest` target to run regression and POD tests in one go
+sub MY::postamble {
+    return <<'END';
+devtest :
+	REGRESSION_TESTS=1 POD_TESTS=1 $(MAKE) test
 
-# Munge test CGI scripts so that they run under current Perl
-my @cgi_files = do {
-    my $cgi_dir = 't/cgi';
-    opendir my $dh, $cgi_dir;
-    map { "$cgi_dir/$_" } grep { !/^\.\.?/ } readdir $dh;
-};
+END
+}
 
-for my $file ( @cgi_files ) {
-    my $text = do {
-        open my $fin, '<', $file or die "Can't open $file for reading: $!";
-        local $/ = undef;
-        <$fin>;
-    };
+# Override `disttest` so it would behave as `devtest`
+sub MY::dist_test {
+    return <<'END';
+disttest : distdir
+	cd $(DISTVNAME) && $(ABSPERLRUN) Makefile.PL
+	cd $(DISTVNAME) && $(MAKE) $(PASTHRU)
+	cd $(DISTVNAME) && $(MAKE) devtest $(PASTHRU)
 
-    $text =~ s{exec perl -S}{exec $^X -S};
-    $file =~ s{\.in}{};
+END
+}
 
-    open my $fout, '>', $file or die "Can't open $file for writing: $!";
-    print $fout $text;
-    close $fout;
+my $MM_VERSION  = $ExtUtils::MakeMaker::VERSION;
+my $github_repo = 'https://github.com/nohuhu/CGI-Test';
 
-    chmod 0755, $file;
-};
+my %MAIN_REQ = (
+    # Perl 5.20 warns that CGI is going to be removed
+    # from the core in 5.22, so we require it here
+    CGI                    => 0,
 
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
+    Storable               => '1.00',
+    URI                    => '1.10',
+    ($] >= 5.008                       # HTTP::Status is now in
+        ? ('HTTP::Message' => 0, )     # HTTP::Message bundle that
+        : ('LWP'           => 0, )     # requires 5.8+
+    ),
+    'HTML::TreeBuilder'    => 0,
+    'File::Temp'           => 0,
+    'File::Spec'           => 0,
+);
+
+my %TEST_REQ = (
+    'Test::More' => '0.82', # for explain()
+);
+
 WriteMakefile(
-    NAME              => 'CGI::Test',
-    VERSION_FROM      => 'lib/CGI/Test.pm', # finds $VERSION
-    PREREQ_PM         => {
-        'CGI'               => '0',
-        'Digest::MD5'       => '0',
-        'URI'               => '1.10',
-        ($] >= 5.008                   # HTTP::Status is now in
-         ? ('HTTP::Message' => '0', )  # HTTP::Message bundle which
-         : ('LWP'           => '0', )  # requires 5.8+
+    NAME         => 'CGI::Test',
+    ABSTRACT     => 'CGI regression test framework',
+    LICENSE      => 'perl',
+
+    VERSION_FROM => 'lib/CGI/Test.pm',
+    
+    ($MM_VERSION >= 6.64
+        ? (
+            TEST_REQUIRES => \%TEST_REQ,
+            PREREQ_PM     => \%MAIN_REQ,
+        )
+        : (
+            ($MM_VERSION >= 6.5503
+                ? (
+                    BUILD_REQUIRES => \%TEST_REQ,
+                    PREREQ_PM      => \%MAIN_REQ,
+                )
+                : (
+                    PREREQ_PM => {
+                        %TEST_REQ,
+                        %MAIN_REQ,
+                    },
+                ),
+            ),
         ),
-        'HTML::TreeBuilder' => '0',
-        'File::Temp'        => '0',
-        'File::Spec'        => '0',
-        'Storable'          => '1.000',
-    },
+    ),
 
-    ABSTRACT => 'CGI regression test framework',
-    AUTHOR   => 'Raphael Manfredi <Raphael_Manfredi@pobox.com>',
-    LICENSE  => 'perl',
+    ($MM_VERSION >= 6.57
+        ? ( AUTHOR => [
+                'Alex Tokarev <tokarev@cpan.org>',
+                'Steven Hilton <mshiltonj@mshiltonj.com>',
+                'Raphael Manfredi <Raphael_Manfredi@pobox.com>',
+            ]
+        )
+        : (
+            AUTHOR => 'Alex Tokarev <tokarev@cpan.org>',
+        ),
+    ),
 
-    META_MERGE => {
-        resources   => {
-            bugtracker  => 'http://github.com/nohuhu/CGI-Test/issues',
-            repository  => 'http://github.com/nohuhu/CGI-Test',
-        },
-    },
+    ($MM_VERSION >= 6.48 ? ( MIN_PERL_VERSION => 5.006000 ) : () ),
 
-    clean => {
-        FILES => 't/cgi/dumpargs t/cgi/getform t/cgi/printenv',
-    },
+    ($MM_VERSION >= 6.46
+        ? ( META_MERGE => {
+                resources   => {
+                    bugtracker  => "$github_repo/issues",
+                    repository  => "$guthub_repo",
+                },
+            },
+        )
+        : (),
+    ),
 );
 

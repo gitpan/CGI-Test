@@ -1,13 +1,16 @@
 ---
 abstract: 'CGI regression test framework'
 author:
+  - 'Alex Tokarev <tokarev@cpan.org>'
+  - 'Steven Hilton <mshiltonj@mshiltonj.com>'
   - 'Raphael Manfredi <Raphael_Manfredi@pobox.com>'
 build_requires:
   ExtUtils::MakeMaker: 0
+  Test::More: 0.82
 configure_requires:
   ExtUtils::MakeMaker: 0
 dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921'
+generated_by: 'ExtUtils::MakeMaker version 6.84, CPAN::Meta::Converter version 2.132661'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -19,14 +22,13 @@ no_index:
     - inc
 requires:
   CGI: 0
-  Digest::MD5: 0
   File::Spec: 0
   File::Temp: 0
   HTML::TreeBuilder: 0
   HTTP::Message: 0
-  Storable: 1.000
+  Storable: 1.00
   URI: 1.10
+  perl: 5.006
 resources:
-  bugtracker: http://github.com/nohuhu/CGI-Test/issues
-  repository: http://github.com/nohuhu/CGI-Test
-version: 0.32
+  bugtracker: https://github.com/nohuhu/CGI-Test/issues
+version: 0.50
