@@ -31,4 +31,5 @@ requires:
   perl: 5.006
 resources:
   bugtracker: https://github.com/nohuhu/CGI-Test/issues
-version: 0.51
+  repository: https://github.com/nohuhu/CGI-Test
+version: 0.52

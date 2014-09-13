@@ -50,7 +50,10 @@
    "resources" : {
       "bugtracker" : {
          "web" : "https://github.com/nohuhu/CGI-Test/issues"
+      },
+      "repository" : {
+         "url" : "https://github.com/nohuhu/CGI-Test"
       }
    },
-   "version" : "0.51"
+   "version" : "0.52"
 }
