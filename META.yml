@@ -32,4 +32,4 @@ requires:
 resources:
   bugtracker: https://github.com/nohuhu/CGI-Test/issues
   repository: https://github.com/nohuhu/CGI-Test
-version: 0.52
+version: 1.000
